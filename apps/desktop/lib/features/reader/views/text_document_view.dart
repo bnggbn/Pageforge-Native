@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../reading_position.dart';
+import 'document_selection.dart';
 
 class TextDocumentView extends StatefulWidget {
   const TextDocumentView({
@@ -60,36 +61,26 @@ class _TextDocumentViewState extends State<TextDocumentView> {
   }
 
   @override
-  Widget build(BuildContext context) => widget.markdown
-      ? Markdown(
-          data: widget.content,
-          selectable: true,
-          controller: scroll,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-          styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-            p: TextStyle(fontSize: widget.fontSize, height: 1.95),
-            h1: TextStyle(fontSize: widget.fontSize * 1.8, height: 1.7),
-            h2: TextStyle(fontSize: widget.fontSize * 1.4, height: 1.7),
+  Widget build(BuildContext context) => DocumentSelection(
+    onQuote: widget.onQuote,
+    scrollController: scroll,
+    child: widget.markdown
+        ? MarkdownBody(
+            data: widget.content,
+            selectable: false,
+            fitContent: false,
+            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                .copyWith(
+                  p: TextStyle(fontSize: widget.fontSize, height: 1.95),
+                  h1: TextStyle(fontSize: widget.fontSize * 1.8, height: 1.7),
+                  h2: TextStyle(fontSize: widget.fontSize * 1.4, height: 1.7),
+                ),
+            imageBuilder: (uri, title, alt) =>
+                Text('[圖片：${alt ?? title ?? '未提供說明'}]'),
+          )
+        : Text(
+            widget.content,
+            style: TextStyle(fontSize: widget.fontSize, height: 1.95),
           ),
-          imageBuilder: (uri, title, alt) =>
-              Text('[圖片：${alt ?? title ?? '未提供說明'}]'),
-          onSelectionChanged: (text, selection, cause) {
-            if (text != null && text.isNotEmpty) widget.onQuote(text);
-          },
-        )
-      : SingleChildScrollView(
-          controller: scroll,
-          padding: const EdgeInsets.all(28),
-          child: SelectionArea(
-            onSelectionChanged: (content) {
-              if (content != null && content.plainText.isNotEmpty) {
-                widget.onQuote(content.plainText);
-              }
-            },
-            child: Text(
-              widget.content,
-              style: TextStyle(fontSize: widget.fontSize, height: 1.95),
-            ),
-          ),
-        );
+  );
 }

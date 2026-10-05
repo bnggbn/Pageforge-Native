@@ -10,6 +10,7 @@
 - 動畫不得維持兩份 PDF／文字閱讀面板，父層更新不重播入場。
 - 設定預設、本機覆寫與 library 路徑。
 - 接通書架、MD／TXT 匯入與編輯、引用筆記、主線歷史／還原與文字 diff。
+- Markdown 共用文章選取區，驗收跨段落拖曳、畫面外段落全選／複製與精確引用；TXT／EPUB 文字使用同一選取區。
 - 持久化草稿、重開恢復與保存失敗阻止切換。
 - 驗證既有 library 主線；原始檔、manifest、versions、drafts 與 progress.json 保持相容。
 - Go 自動測試與 vet、Flutter analyze／測試、Windows release 建置。
@@ -20,7 +21,7 @@
 2. 精確 block／列位置、PDF 頁碼保存、字級設定落盤與 Windows 關閉前 flush。
 3. 沙盒 Fork／Diff／Adopt、封存／復原、草稿選取與捨棄、筆記 diff。
 4. 原始檔／文字／歷史匯出、刪除與垃圾區、圖片驗證與版本化資產。
-5. 大檔 Isolate／Go 工作排程、版本驗證快取、歷史分頁與實際負載量測。
+5. 大檔 Isolate／Go 工作排程、版本驗證快取、歷史分頁與實際負載量測；Markdown 分塊渲染必須保留跨段落及全文選取能力。
 6. 平台驗收、安裝包、手機與 Web；選用同步維持離線可用。
 
 未完成的功能明列於 README，不因 UI 或資料模型存在就視為驗收完成。
