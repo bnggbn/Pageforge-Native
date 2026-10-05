@@ -4,15 +4,25 @@ import '../../data/library_repository.dart';
 import '../../data/models.dart';
 import 'working_copy.dart';
 import 'reading_position.dart';
+import '../evidence/evidence_wall_view_model.dart';
+import 'annotations/paragraph_location.dart';
 
 enum ReaderTab { read, notes, edit, history }
 
 class ReaderViewModel extends ChangeNotifier {
+  bool _disposed = false;
+  void _notify() {
+    if (!_disposed) super.notifyListeners();
+  }
+
   ReaderViewModel(this.repository, this.id);
   final LibraryRepository repository;
   final String id;
   Book? book;
   WorkingCopy? working;
+  EvidenceWallViewModel? wall;
+  Json? noteToReveal;
+  int revealRequest = 0;
   ReadingPosition? position;
   String contentEpoch = '';
   Json config = {};
@@ -42,7 +52,9 @@ class ReaderViewModel extends ChangeNotifier {
 
   Future<void> load() => _act(() async {
     config = await repository.settings();
+    if (_disposed) return;
     final loaded = await repository.load(id);
+    if (_disposed) return;
     book = loaded;
     contentEpoch = loaded.head.id;
     position = ReadingPosition(
@@ -51,7 +63,7 @@ class ReaderViewModel extends ChangeNotifier {
       Duration(milliseconds: config['reading']['progressDebounceMs'] as int),
       (e) {
         error = e.toString();
-        notifyListeners();
+        _notify();
       },
     );
     fontSize = (config['reading']['defaultFontSize'] as num).toDouble();
@@ -61,20 +73,36 @@ class ReaderViewModel extends ChangeNotifier {
       Duration(milliseconds: config['reading']['draftDebounceMs'] as int),
     );
     await working!.open(loaded);
+    if (_disposed) {
+      working!.dispose();
+      return;
+    }
+    wall = EvidenceWallViewModel(
+      repository,
+      loaded,
+      (config['evidenceWall'] as Json?) ?? {},
+    );
+    await wall!.load();
+    if (_disposed) return;
     if (working!.dirty) {
       tab = ReaderTab.edit;
     } else if (working!.body.isNotEmpty || working!.quote.isNotEmpty) {
-      tab = ReaderTab.notes;
+      tab = ReaderTab.read;
     }
   });
   Future<bool> flush() async {
     try {
       await working?.flush();
       await position?.flush();
+      await wall?.flush();
+      if (error.isNotEmpty) {
+        error = '';
+        _notify();
+      }
       return true;
     } catch (e) {
       error = e.toString();
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -84,12 +112,12 @@ class ReaderViewModel extends ChangeNotifier {
     tab = value;
     error = '';
     message = '';
-    notifyListeners();
+    _notify();
   }
 
   void resize(double value) {
     fontSize = value;
-    notifyListeners();
+    _notify();
   }
 
   Future<void> selectSection(int value) => _act(() async {
@@ -105,6 +133,24 @@ class ReaderViewModel extends ChangeNotifier {
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
     });
   });
+  Future<void> showEvidence(String noteId) async {
+    if (busy || !await flush()) return;
+    wall?.focus(noteId);
+    tab = ReaderTab.notes;
+    _notify();
+  }
+
+  Future<void> revealNote(Json note) async {
+    if (busy || !await flush()) return;
+    final anchor = ParagraphLocation.parse(note['location'] as String);
+    section = anchor?.section ?? 0;
+    position?.changeSection(section);
+    noteToReveal = note;
+    revealRequest++;
+    tab = ReaderTab.read;
+    _notify();
+  }
+
   Future<void> saveEdit() =>
       _commit('edit', working!.content, book!.head.notes, clearContent: true);
   Future<void> addNote() async {
@@ -145,6 +191,7 @@ class ReaderViewModel extends ChangeNotifier {
   }) => _act(() async {
     await working!.flush();
     await position?.flush();
+    await wall?.flush();
     final updated = await repository.commit(
       book!,
       kind,
@@ -159,6 +206,7 @@ class ReaderViewModel extends ChangeNotifier {
     }
     position?.rebase(updated, changed);
     book = updated;
+    wall?.updateBook(updated);
     // The version already exists even if subsequent draft housekeeping fails.
     message = '已保存第 ${updated.revisions.length} 版。';
     await working!.rebase(
@@ -172,19 +220,21 @@ class ReaderViewModel extends ChangeNotifier {
     if (busy) return;
     busy = true;
     error = '';
-    notifyListeners();
+    _notify();
     try {
       await action();
     } catch (e) {
       error = e.toString();
     } finally {
       busy = false;
-      notifyListeners();
+      _notify();
     }
   }
 
   @override
   void dispose() {
+    _disposed = true;
+    wall?.dispose();
     working?.dispose();
     position?.dispose();
     super.dispose();

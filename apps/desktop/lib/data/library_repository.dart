@@ -13,6 +13,13 @@ class ApiException implements Exception {
 
 abstract class LibraryRepository {
   Future<Json> settings();
+  Future<Json> loadEvidence(String id);
+  Future<Json> saveEvidence(
+    String id,
+    Json wall,
+    String expectedRevision,
+    String expectedHead,
+  );
   Future<List<BookSummary>> list();
   Future<Book> load(String id);
   Future<String> import(String path);
@@ -145,5 +152,21 @@ class HttpLibraryRepository implements LibraryRepository {
       (await _request('POST', 'books/$id/diff', {'from': from, 'to': to})
               as List)
           .cast<Json>();
+  @override
+  Future<Json> loadEvidence(String id) async =>
+      await _request('GET', 'books/$id/evidence-wall') as Json;
+  @override
+  Future<Json> saveEvidence(
+    String id,
+    Json wall,
+    String expectedRevision,
+    String expectedHead,
+  ) async =>
+      await _request('PUT', 'books/$id/evidence-wall', {
+            'wall': wall,
+            'expectedRevision': expectedRevision,
+            'expectedHead': expectedHead,
+          })
+          as Json;
   void close() => client.close();
 }

@@ -4,6 +4,8 @@ import 'package:pdfrx/pdfrx.dart';
 import '../reader_view_model.dart';
 import 'spreadsheet_view.dart';
 import 'text_document_view.dart';
+import '../annotations/note_composer.dart';
+import '../annotations/paragraph_notes_dialog.dart';
 
 class DocumentView extends StatelessWidget {
   const DocumentView({required this.model, super.key});
@@ -56,7 +58,18 @@ class DocumentView extends StatelessWidget {
                 markdown: book.format == 'markdown',
                 fontSize: model.fontSize,
                 position: model.position!,
-                onQuote: (value) => model.working!.change({'quote': value}),
+                onQuote: (_) {},
+                notes: book.head.notes,
+                section: section,
+                onCreateNote: (passage) =>
+                    openNoteComposer(context, model, passage),
+                onOpenNotes: (passage, notes) =>
+                    openParagraphNotes(context, model, passage, notes),
+                revealNote: model.noteToReveal,
+                revealRequest: model.revealRequest,
+                onUnresolved: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('原段落已變动或引用不唯一；筆記保留了當時選取的原文。')),
+                ),
               ),
             ),
           ),

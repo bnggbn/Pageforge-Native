@@ -37,10 +37,10 @@ void main() {
       tester.widget<TextField>(find.byType(TextField)).controller,
       same(controller),
     );
-    await tester.tap(find.text('筆記'));
+    await tester.tap(find.text('線索牆'));
     await tester.pump();
     expect(find.byType(EditorView), findsNothing);
-    expect(find.byType(TextField), findsNWidgets(3));
+    expect(find.text('從一段文字，開始整理線索。'), findsOneWidget);
     await tester.pumpAndSettle();
     await tester.tap(find.text('編輯'));
     await tester.pumpAndSettle();

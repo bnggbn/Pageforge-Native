@@ -15,7 +15,7 @@ class ReaderToolbar extends StatelessWidget {
     children: [
       for (final entry in [
         (ReaderTab.read, '閱讀'),
-        (ReaderTab.notes, '筆記'),
+        (ReaderTab.notes, '線索牆'),
         if (model.book!.editable) (ReaderTab.edit, '編輯'),
         (ReaderTab.history, '版本'),
       ])

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'article_body.dart';
+import '../../../data/models.dart';
+import '../annotations/annotated_article.dart';
+import '../annotations/paragraph_location.dart';
 import '../reading_position.dart';
 import 'document_selection.dart';
 
@@ -10,6 +12,13 @@ class TextDocumentView extends StatefulWidget {
     required this.fontSize,
     required this.position,
     required this.onQuote,
+    this.notes = const [],
+    this.section = 0,
+    this.onCreateNote,
+    this.onOpenNotes,
+    this.revealNote,
+    this.revealRequest = 0,
+    this.onUnresolved,
     super.key,
   });
   final String content;
@@ -17,18 +26,26 @@ class TextDocumentView extends StatefulWidget {
   final double fontSize;
   final ReadingPosition position;
   final ValueChanged<String> onQuote;
+  final List<Json> notes;
+  final int section, revealRequest;
+  final Json? revealNote;
+  final ValueChanged<NotePassage>? onCreateNote;
+  final void Function(NotePassage, List<Json>)? onOpenNotes;
+  final VoidCallback? onUnresolved;
   @override
   State<TextDocumentView> createState() => _TextDocumentViewState();
 }
 
 class _TextDocumentViewState extends State<TextDocumentView> {
   final scroll = ScrollController();
+  final article = AnnotatedArticleController();
   bool restoring = true;
   @override
   void initState() {
     super.initState();
     scroll.addListener(capture);
     restore();
+    reveal();
   }
 
   void capture() {
@@ -52,6 +69,22 @@ class _TextDocumentViewState extends State<TextDocumentView> {
   void didUpdateWidget(TextDocumentView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.fontSize != widget.fontSize) restore();
+    if (oldWidget.revealRequest != widget.revealRequest) reveal();
+  }
+
+  void reveal() {
+    final note = widget.revealNote;
+    if (note == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        final found = await article.reveal(
+          note['location'] as String? ?? '',
+          note['quote'] as String? ?? '',
+        );
+        if (!found) widget.onUnresolved?.call();
+      });
+    });
   }
 
   @override
@@ -64,7 +97,16 @@ class _TextDocumentViewState extends State<TextDocumentView> {
   Widget build(BuildContext context) => DocumentSelection(
     onQuote: widget.onQuote,
     scrollController: scroll,
-    child: ArticleBody(
+    onCreateNote: widget.onCreateNote == null
+        ? null
+        : (quote, first, last) =>
+              widget.onCreateNote!(article.selection(quote, first, last)),
+    child: AnnotatedArticle(
+      controller: article,
+      notes: widget.notes,
+      section: widget.section,
+      scroll: scroll,
+      onOpen: (passage, notes) => widget.onOpenNotes?.call(passage, notes),
       content: widget.content,
       markdown: widget.markdown,
       fontSize: widget.fontSize,

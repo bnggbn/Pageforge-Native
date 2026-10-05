@@ -5,6 +5,7 @@ import 'reader_view_model.dart';
 import 'views/reader_pane.dart';
 import 'views/reader_toolbar.dart';
 import 'views/working_copy_bar.dart';
+import 'annotations/note_composer.dart';
 
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({required this.repository, required this.id, super.key});
@@ -21,7 +22,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void initState() {
     super.initState();
     model = ReaderViewModel(widget.repository, widget.id);
-    model.load();
+    model.load().then((_) {
+      if (mounted && model.working != null && model.working!.body.isNotEmpty) {
+        openNoteComposer(context, model);
+      }
+    });
   }
 
   @override

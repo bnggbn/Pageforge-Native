@@ -20,6 +20,30 @@ class FakeRepository implements LibraryRepository {
       },
     ],
   };
+  Json? savedWall;
+  bool failWall = false;
+  @override
+  Future<Json> loadEvidence(String id) async =>
+      savedWall ??
+      {
+        'schemaVersion': 1,
+        'revision': '',
+        'updatedAt': '',
+        'cards': <Json>[],
+        'edges': <Json>[],
+      };
+  @override
+  Future<Json> saveEvidence(
+    String id,
+    Json wall,
+    String expectedRevision,
+    String expectedHead,
+  ) async {
+    if (failWall) throw ApiException('wall conflict', 409);
+    savedWall = {...wall, 'revision': 'wall-token'};
+    return savedWall!;
+  }
+
   Json? savedDraft;
   bool failDraft = false;
   int saves = 0;

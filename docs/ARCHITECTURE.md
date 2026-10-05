@@ -6,7 +6,9 @@ apps/desktop/lib/
   data/                      immutable 畫面模型、HTTP repository 合約
   features/library/          書架 ViewModel 與介面
   features/reader/           閱讀協調、working copy、reading position
-  features/reader/views/     文字／PDF／表格、編輯、筆記、歷史畫面
+  features/reader/views/     文字／PDF／表格、編輯與歷史畫面
+  features/reader/annotations/ 段落索引、小雲、筆記輸入與引用查看
+  features/evidence/         線索牆狀態、畫布、卡片與紅線
   features/design/           外觀資料、已保存外觀、工作室與共享預覽
   features/history/          diff 請求與過期結果隔離
   ui/                        主題與共用介面
@@ -22,7 +24,9 @@ backend/
 ```
 
 Widget 不直接操作 library。ViewModel 依赖 repository 合約，Go 的儲存與 VAX 分開。
-working copy 與 reading position 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。
+working copy、reading position 與 evidence wall 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。
+線索牆不建立全部卡片 Widget，只建立可視區及緩衝區內的卡片；紅線集中繪製，背景點格只繪製視窗大小。段落索引依內容雜湊快取查找並在排版改變後量測位置。
+線索牆持久化檔案獨立於 VAX 節點，使用布局 token 與文件 head 防止覆蓋過期更新；見 [資料合約](EVIDENCE_WALL.md)。
 表格使用固定列高的 ListView.builder，只建立可見列；完整內容另開選取視窗。
 
 桌面程序啟動 Go sidecar，Go 監聽 127.0.0.1 的動態 port。
