@@ -42,7 +42,7 @@ func TestEvidencePersistenceAndVersionIsolation(t *testing.T) {
 		t.Fatal(err)
 	}
 	loaded, err := s.LoadEvidence(book.ID)
-	if err != nil || loaded.Revision != saved.Revision || loaded.Edges[0].Label != "相互印證" {
+	if err != nil || loaded.Revision != saved.Revision || loaded.Topics[0].Edges[0].Label != "相互印證" {
 		t.Fatal("layout did not survive load", err)
 	}
 	if _, err = s.SaveEvidence(book.ID, SaveEvidence{Wall: wall, ExpectedHead: head.ID}); !errors.Is(err, ErrConflict) {

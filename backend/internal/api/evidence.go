@@ -10,7 +10,7 @@ func (s *Server) loadEvidence(w http.ResponseWriter, r *http.Request) {
 	respond(w, wall, err)
 }
 func (s *Server) saveEvidence(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+	r.Body = http.MaxBytesReader(w, r.Body, int64(s.Config.EvidenceWall.LayoutMiB)*1024*1024)
 	var input library.SaveEvidence
 	if err := s.body(w, r, &input); err != nil {
 		respond(w, nil, err)

@@ -53,6 +53,9 @@
     "maxEdges": 1000,
     "canvasWidth": 6400,
     "canvasHeight": 6400,
-    "saveDebounceMs": 500
+    "saveDebounceMs": 500,
+    "maxTopics": 32,
+    "topicNameCharacters": 80,
+    "layoutMiB": 4
   }
 }

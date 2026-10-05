@@ -9,11 +9,14 @@ import (
 
 type Config struct {
 	EvidenceWall struct {
-		MaxCards       int `json:"maxCards"`
-		MaxEdges       int `json:"maxEdges"`
-		CanvasWidth    int `json:"canvasWidth"`
-		CanvasHeight   int `json:"canvasHeight"`
-		SaveDebounceMs int `json:"saveDebounceMs"`
+		MaxTopics           int `json:"maxTopics"`
+		TopicNameCharacters int `json:"topicNameCharacters"`
+		LayoutMiB           int `json:"layoutMiB"`
+		MaxCards            int `json:"maxCards"`
+		MaxEdges            int `json:"maxEdges"`
+		CanvasWidth         int `json:"canvasWidth"`
+		CanvasHeight        int `json:"canvasHeight"`
+		SaveDebounceMs      int `json:"saveDebounceMs"`
 	} `json:"evidenceWall"`
 	Paths struct {
 		LibraryRoot string `json:"libraryRoot"`
@@ -43,6 +46,9 @@ type Config struct {
 
 func Load(root string) (Config, error) {
 	var c Config
+	c.EvidenceWall.MaxTopics = 32
+	c.EvidenceWall.TopicNameCharacters = 80
+	c.EvidenceWall.LayoutMiB = 4
 	c.EvidenceWall.MaxCards = 500
 	c.EvidenceWall.MaxEdges = 1000
 	c.EvidenceWall.CanvasWidth = 6400
@@ -73,8 +79,21 @@ func Load(root string) (Config, error) {
 	if env := os.Getenv("PAGEFORGE_LIBRARY_ROOT"); env != "" {
 		c.Paths.LibraryRoot = env
 	}
-	if c.EvidenceWall.MaxCards < 1 || c.EvidenceWall.MaxCards > 2000 || c.EvidenceWall.MaxEdges < 1 || c.EvidenceWall.MaxEdges > 4000 ||
-		c.EvidenceWall.CanvasWidth < 1000 || c.EvidenceWall.CanvasWidth > 20000 || c.EvidenceWall.CanvasHeight < 1000 || c.EvidenceWall.CanvasHeight > 20000 || c.EvidenceWall.SaveDebounceMs < 100 {
+	if c.EvidenceWall.MaxTopics < 1 ||
+		c.EvidenceWall.MaxTopics > 100 ||
+		c.EvidenceWall.TopicNameCharacters < 4 ||
+		c.EvidenceWall.TopicNameCharacters > 200 ||
+		c.EvidenceWall.LayoutMiB < 1 ||
+		c.EvidenceWall.LayoutMiB > 16 ||
+		c.EvidenceWall.MaxCards < 1 ||
+		c.EvidenceWall.MaxCards > 2000 ||
+		c.EvidenceWall.MaxEdges < 1 ||
+		c.EvidenceWall.MaxEdges > 4000 ||
+		c.EvidenceWall.CanvasWidth < 1000 ||
+		c.EvidenceWall.CanvasWidth > 20000 ||
+		c.EvidenceWall.CanvasHeight < 1000 ||
+		c.EvidenceWall.CanvasHeight > 20000 ||
+		c.EvidenceWall.SaveDebounceMs < 100 {
 		return c, fmt.Errorf("線索牆設定無效")
 	}
 	if c.Paths.LibraryRoot == "" || c.Limits.TextMiB < 1 || c.Limits.RequestMiB < c.Limits.TextMiB*2 ||
