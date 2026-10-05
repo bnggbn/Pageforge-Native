@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/library_repository.dart';
 import '../../ui/motion.dart';
 import '../../ui/theme.dart';
+import '../../ui/design_theme.dart';
+import '../design/design_controller.dart';
+import '../design/studio_screen.dart';
 import '../reader/reader_screen.dart';
 import 'book_tile.dart';
 import 'library_header.dart';
@@ -11,8 +14,13 @@ import 'reading_invitation.dart';
 import 'shelf_toolbar.dart';
 
 class LibraryScreen extends StatefulWidget {
-  const LibraryScreen({required this.repository, super.key});
+  const LibraryScreen({
+    required this.repository,
+    this.designController,
+    super.key,
+  });
   final LibraryRepository repository;
+  final DesignController? designController;
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
 }
@@ -83,14 +91,30 @@ class _LibraryScreenState extends State<LibraryScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            LibraryHeader(onImport: model.busy ? null : import),
-                            const SizedBox(height: 30),
-                            ReadingInvitation(
-                              book: featured,
-                              onOpen: model.busy || featured == null
+                            LibraryHeader(
+                              onImport: model.busy ? null : import,
+                              onDesign: widget.designController == null
                                   ? null
-                                  : () => open(featured.id),
+                                  : () => Navigator.of(context).push(
+                                      PageforgeMotion.route<void>(
+                                        context,
+                                        builder: (_) => StudioScreen(
+                                          controller: widget.designController!,
+                                        ),
+                                      ),
+                                    ),
                             ),
+                            if (widget.designController?.error.isNotEmpty ??
+                                false)
+                              Text(widget.designController!.error),
+                            const SizedBox(height: 30),
+                            if (context.design.showInvitation)
+                              ReadingInvitation(
+                                book: featured,
+                                onOpen: model.busy || featured == null
+                                    ? null
+                                    : () => open(featured.id),
+                              ),
                             const SizedBox(height: 24),
                             ShelfToolbar(
                               count: model.books.length,
@@ -130,13 +154,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                       itemCount: visible.length,
                       findChildIndexCallback: (key) =>
                           indices[(key as ValueKey<String>).value],
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 260,
-                            mainAxisExtent: 365,
-                            crossAxisSpacing: 28,
-                            mainAxisSpacing: 32,
-                          ),
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: context.design.cardWidth,
+                        mainAxisExtent: 365,
+                        crossAxisSpacing: context.design.gap,
+                        mainAxisSpacing: context.design.gap,
+                      ),
                       itemBuilder: (context, index) {
                         final book = visible[index];
                         return MotionEntrance(

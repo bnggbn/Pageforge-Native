@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/models.dart';
 import '../../ui/theme.dart';
+import '../../ui/design_theme.dart';
 import 'cover_art.dart';
 
 class BookCover extends StatelessWidget {
@@ -9,10 +10,10 @@ class BookCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const colors = [
+    final colors = [
       Color(0xffe7e0cf),
-      forest,
-      rust,
+      context.design.forest,
+      context.design.rust,
       Color(0xffdba951),
       Color(0xffb7c6ca),
     ];
@@ -21,7 +22,9 @@ class BookCover extends StatelessWidget {
       (value, unit) => (value * 31 + unit) & 0xffff,
     );
     final color = colors[seed % colors.length];
-    final foreground = color == forest || color == rust ? paper : ink;
+    final foreground = color.computeLuminance() < .3
+        ? context.design.paper
+        : context.design.ink;
     return AspectRatio(
       aspectRatio: 2 / 3,
       child: LayoutBuilder(
@@ -29,7 +32,7 @@ class BookCover extends StatelessWidget {
           final scale = bounds.maxWidth / 200;
           return DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: const BorderRadius.horizontal(
+              borderRadius: BorderRadius.horizontal(
                 left: Radius.circular(2),
                 right: Radius.circular(5),
               ),
@@ -39,9 +42,9 @@ class BookCover extends StatelessWidget {
                   color,
                   Color.lerp(color, Colors.white, .035)!,
                 ],
-                stops: const [0, .08, 1],
+                stops: [0, .08, 1],
               ),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
                   color: Color(0x26000000),
                   blurRadius: 12,
@@ -52,7 +55,10 @@ class BookCover extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CoverArt(variant: seed ~/ 5, color: foreground),
+                CoverArt(
+                  variant: context.design.coverArt ?? seed ~/ 5,
+                  color: foreground,
+                ),
                 Positioned(
                   left: 7 * scale,
                   top: 0,
@@ -86,7 +92,7 @@ class BookCover extends StatelessWidget {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontFamily: editorialFace,
+                          fontFamily: context.design.headingFont,
                           fontFamilyFallback: editorialFallback,
                           color: foreground,
                           fontSize: 23 * scale,
@@ -94,7 +100,7 @@ class BookCover extends StatelessWidget {
                           letterSpacing: -.3,
                         ),
                       ),
-                      const Spacer(),
+                      Spacer(),
                       Text(
                         'A PLACE FOR WORDS',
                         style: TextStyle(

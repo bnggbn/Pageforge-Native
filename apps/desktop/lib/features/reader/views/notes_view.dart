@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../ui/theme.dart';
+import '../../../ui/design_theme.dart';
 import '../reader_view_model.dart';
 
 class NotesView extends StatefulWidget {
@@ -40,53 +40,53 @@ class _NotesViewState extends State<NotesView> {
   @override
   Widget build(BuildContext context) => ListView(
     children: [
-      const Text('留下一個想法', style: TextStyle(fontSize: 21)),
-      const SizedBox(height: 16),
+      Text('留下一個想法', style: TextStyle(fontSize: 21)),
+      SizedBox(height: 16),
       TextField(
         controller: body,
         maxLines: 5,
         readOnly: widget.model.busy,
         onChanged: (value) => widget.model.working!.change({'body': value}),
-        decoration: const InputDecoration(labelText: '筆記'),
+        decoration: InputDecoration(labelText: '筆記'),
       ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
       TextField(
         controller: quote,
         maxLines: 3,
         readOnly: widget.model.busy,
         onChanged: (value) => widget.model.working!.change({'quote': value}),
-        decoration: const InputDecoration(labelText: '引用文字'),
+        decoration: InputDecoration(labelText: '引用文字'),
       ),
-      const SizedBox(height: 12),
+      SizedBox(height: 12),
       TextField(
         controller: location,
         readOnly: widget.model.busy,
         onChanged: (value) => widget.model.working!.change({'location': value}),
-        decoration: const InputDecoration(labelText: '位置'),
+        decoration: InputDecoration(labelText: '位置'),
       ),
-      const SizedBox(height: 16),
+      SizedBox(height: 16),
       FilledButton(
         onPressed: widget.model.busy ? null : widget.model.addNote,
-        child: const Text('保存筆記'),
+        child: Text('保存筆記'),
       ),
-      const SizedBox(height: 26),
-      const Divider(),
+      SizedBox(height: 26),
+      Divider(),
       for (final note in widget.model.book!.head.notes)
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: EdgeInsets.symmetric(vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '${note['location']}',
-                style: const TextStyle(color: muted, fontSize: 11),
+                style: TextStyle(color: context.design.muted, fontSize: 11),
               ),
               if ('${note['quote']}'.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: EdgeInsets.symmetric(vertical: 6),
                   child: SelectableText(
                     '「${note['quote']}」',
-                    style: const TextStyle(color: forest),
+                    style: TextStyle(color: context.design.forest),
                   ),
                 ),
               SelectableText('${note['body']}'),
@@ -94,7 +94,7 @@ class _NotesViewState extends State<NotesView> {
                 onPressed: widget.model.busy
                     ? null
                     : () => widget.model.removeNote(note['id'] as String),
-                child: const Text('移除筆記'),
+                child: Text('移除筆記'),
               ),
             ],
           ),

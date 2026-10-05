@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../ui/motion.dart';
-import '../../../ui/theme.dart';
+import '../../../ui/design_theme.dart';
 import '../reader_view_model.dart';
 
 class ReaderToolbar extends StatelessWidget {
@@ -22,7 +22,9 @@ class ReaderToolbar extends StatelessWidget {
         TextButton(
           onPressed: model.busy ? null : () => model.changeTab(entry.$1),
           style: TextButton.styleFrom(
-            foregroundColor: model.tab == entry.$1 ? rust : muted,
+            foregroundColor: model.tab == entry.$1
+                ? context.design.rust
+                : context.design.muted,
             padding: EdgeInsets.zero,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
@@ -33,15 +35,17 @@ class ReaderToolbar extends StatelessWidget {
                 ? Duration.zero
                 : PageforgeMotion.quick,
             curve: PageforgeMotion.curve,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
               color: model.tab == entry.$1
-                  ? rust.withValues(alpha: .09)
+                  ? context.design.rust.withValues(alpha: .09)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(5),
               border: Border(
                 bottom: BorderSide(
-                  color: model.tab == entry.$1 ? rust : Colors.transparent,
+                  color: model.tab == entry.$1
+                      ? context.design.rust
+                      : Colors.transparent,
                   width: 2,
                 ),
               ),
@@ -49,16 +53,16 @@ class ReaderToolbar extends StatelessWidget {
             child: Text(entry.$2),
           ),
         ),
-      const SizedBox(width: 16),
+      SizedBox(width: 16),
       IconButton(
         tooltip: '縮小字級',
         onPressed: model.canDecreaseFont ? model.decreaseFont : null,
-        icon: const Icon(Icons.text_decrease, size: 18),
+        icon: Icon(Icons.text_decrease, size: 18),
       ),
       IconButton(
         tooltip: '放大字級',
         onPressed: model.canIncreaseFont ? model.increaseFont : null,
-        icon: const Icon(Icons.text_increase, size: 18),
+        icon: Icon(Icons.text_increase, size: 18),
       ),
     ],
   );

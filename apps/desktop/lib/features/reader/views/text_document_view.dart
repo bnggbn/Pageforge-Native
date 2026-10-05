@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'article_body.dart';
 import '../reading_position.dart';
 import 'document_selection.dart';
 
@@ -64,23 +64,10 @@ class _TextDocumentViewState extends State<TextDocumentView> {
   Widget build(BuildContext context) => DocumentSelection(
     onQuote: widget.onQuote,
     scrollController: scroll,
-    child: widget.markdown
-        ? MarkdownBody(
-            data: widget.content,
-            selectable: false,
-            fitContent: false,
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                .copyWith(
-                  p: TextStyle(fontSize: widget.fontSize, height: 1.95),
-                  h1: TextStyle(fontSize: widget.fontSize * 1.8, height: 1.7),
-                  h2: TextStyle(fontSize: widget.fontSize * 1.4, height: 1.7),
-                ),
-            imageBuilder: (uri, title, alt) =>
-                Text('[圖片：${alt ?? title ?? '未提供說明'}]'),
-          )
-        : Text(
-            widget.content,
-            style: TextStyle(fontSize: widget.fontSize, height: 1.95),
-          ),
+    child: ArticleBody(
+      content: widget.content,
+      markdown: widget.markdown,
+      fontSize: widget.fontSize,
+    ),
   );
 }

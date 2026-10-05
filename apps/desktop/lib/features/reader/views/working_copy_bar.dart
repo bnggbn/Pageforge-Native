@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../ui/theme.dart';
+import '../../../ui/design_theme.dart';
 import '../working_copy.dart';
 
 class WorkingCopyBar extends StatelessWidget {
@@ -9,15 +9,15 @@ class WorkingCopyBar extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: copy,
     builder: (context, _) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Icon(
             copy.status == 'error' ? Icons.error_outline : Icons.edit_note,
             size: 16,
-            color: muted,
+            color: context.design.muted,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Expanded(
             child: Text(
               copy.error.isNotEmpty
@@ -29,7 +29,9 @@ class WorkingCopyBar extends StatelessWidget {
                     },
               style: TextStyle(
                 fontSize: 11,
-                color: copy.error.isEmpty ? muted : rust,
+                color: copy.error.isEmpty
+                    ? context.design.muted
+                    : context.design.rust,
               ),
             ),
           ),
@@ -38,7 +40,7 @@ class WorkingCopyBar extends StatelessWidget {
               onPressed: () {
                 copy.flush().catchError((Object e) {});
               },
-              child: const Text('重試'),
+              child: Text('重試'),
             ),
         ],
       ),

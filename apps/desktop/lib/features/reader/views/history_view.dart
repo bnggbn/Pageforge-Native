@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/models.dart';
-import '../../../ui/theme.dart';
+import '../../../ui/design_theme.dart';
 import '../../history/diff_view_model.dart';
 import '../reader_view_model.dart';
 
@@ -85,7 +85,7 @@ class _HistoryViewState extends State<HistoryView> {
               });
               diff.compare(from, to);
             }),
-            const Icon(Icons.arrow_forward, size: 16),
+            Icon(Icons.arrow_forward, size: 16),
             selector(to, (value) {
               setState(() {
                 to = value;
@@ -100,24 +100,24 @@ class _HistoryViewState extends State<HistoryView> {
                         (r) => r.id == to,
                       ),
                     ),
-              child: const Text('還原所選版本為新版'),
+              child: Text('還原所選版本為新版'),
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        if (diff.busy) const LinearProgressIndicator(),
+        SizedBox(height: 20),
+        if (diff.busy) LinearProgressIndicator(),
         if (diff.error.isNotEmpty)
-          Text(diff.error, style: const TextStyle(color: rust)),
-        const SizedBox(height: 12),
+          Text(diff.error, style: TextStyle(color: context.design.rust)),
+        SizedBox(height: 12),
         Expanded(
           child: SingleChildScrollView(
             child: SelectableText.rich(
               TextSpan(
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Consolas',
                   fontSize: 14,
                   height: 1.9,
-                  color: ink,
+                  color: context.design.ink,
                 ),
                 children: [
                   for (final part in diff.parts)
@@ -125,14 +125,14 @@ class _HistoryViewState extends State<HistoryView> {
                       text: part['text'] as String,
                       style: TextStyle(
                         color: part['kind'] == 'insert'
-                            ? forest
+                            ? context.design.forest
                             : part['kind'] == 'delete'
-                            ? rust
-                            : ink,
+                            ? context.design.rust
+                            : context.design.ink,
                         backgroundColor: part['kind'] == 'insert'
-                            ? const Color(0xffe1eddf)
+                            ? Color(0xffe1eddf)
                             : part['kind'] == 'delete'
-                            ? const Color(0xfff3ddd7)
+                            ? Color(0xfff3ddd7)
                             : null,
                         decoration: part['kind'] == 'delete'
                             ? TextDecoration.lineThrough

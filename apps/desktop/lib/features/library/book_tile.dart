@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/models.dart';
 import '../../ui/motion.dart';
-import '../../ui/theme.dart';
+import '../../ui/design_theme.dart';
 import 'book_cover.dart';
 
 class BookTile extends StatefulWidget {
@@ -46,22 +46,30 @@ class _BookTileState extends State<BookTile> {
                 child: AnimatedContainer(
                   duration: duration,
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 22),
                   decoration: BoxDecoration(
                     color: active
-                        ? const Color(0xffe9e7de)
-                        : const Color(0xffeeece4),
+                        ? Color.lerp(
+                            context.design.paper,
+                            context.design.ink,
+                            .07,
+                          )!
+                        : Color.lerp(
+                            context.design.paper,
+                            context.design.ink,
+                            .035,
+                          )!,
                     borderRadius: BorderRadius.circular(7),
                     border: Border.all(
                       color: focused
-                          ? rust.withValues(alpha: .55)
+                          ? context.design.rust.withValues(alpha: .55)
                           : Colors.transparent,
                     ),
                   ),
                   child: Center(child: BookCover(book: book)),
                 ),
               ),
-              const SizedBox(height: 14),
+              SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
@@ -69,7 +77,7 @@ class _BookTileState extends State<BookTile> {
                       book.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -78,14 +86,18 @@ class _BookTileState extends State<BookTile> {
                   AnimatedOpacity(
                     duration: duration,
                     opacity: active ? 1 : 0,
-                    child: const Icon(Icons.north_east, size: 14, color: rust),
+                    child: Icon(
+                      Icons.north_east,
+                      size: 14,
+                      color: context.design.rust,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 '${book.label} · ${book.versions} 個版本 · ${book.progress.round()}% 已讀',
-                style: const TextStyle(color: muted, fontSize: 10),
+                style: TextStyle(color: context.design.muted, fontSize: 10),
               ),
             ],
           ),

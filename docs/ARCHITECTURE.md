@@ -7,6 +7,7 @@ apps/desktop/lib/
   features/library/          書架 ViewModel 與介面
   features/reader/           閱讀協調、working copy、reading position
   features/reader/views/     文字／PDF／表格、編輯、筆記、歷史畫面
+  features/design/           外觀資料、已保存外觀、工作室與共享預覽
   features/history/          diff 請求與過期結果隔離
   ui/                        主題與共用介面
 backend/
@@ -15,6 +16,7 @@ backend/
   internal/model/            library 相容的資料模型
   internal/library/          檔案邊界、匯入、版本、草稿與進度
   internal/vax/              vax-sdk 1.0.0 的 canonical bytes 與 SHA-256 協定
+  internal/design/           嚴格外觀 JSON、revision 衝突檢查與原子保存
   internal/compare/          有輸入上限與 deadline 的文字 diff
   internal/api/              本機 API 與請求驗證
 ```

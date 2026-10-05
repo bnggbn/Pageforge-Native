@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../ui/design_theme.dart';
 import 'package:pdfrx/pdfrx.dart';
 import '../reader_view_model.dart';
 import 'spreadsheet_view.dart';
@@ -48,7 +49,7 @@ class DocumentView extends StatelessWidget {
         Expanded(
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 780),
+              constraints: BoxConstraints(maxWidth: context.design.pageWidth),
               child: TextDocumentView(
                 key: ValueKey('${book.id}:$section:${model.contentEpoch}'),
                 content: content,

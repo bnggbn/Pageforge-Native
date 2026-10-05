@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../ui/theme.dart';
+import '../../ui/design_theme.dart';
 
 class ShelfToolbar extends StatelessWidget {
   const ShelfToolbar({
@@ -18,27 +18,31 @@ class ShelfToolbar extends StatelessWidget {
     children: [
       DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xffdcded2)),
+          border: Border.all(color: Color(0xffdcded2)),
           borderRadius: BorderRadius.circular(5),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Wrap(
             spacing: 16,
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              const Icon(Icons.folder_outlined, size: 17, color: forest),
-              const Text(
-                'library / collection',
-                style: TextStyle(color: muted, fontSize: 11),
+              Icon(
+                Icons.folder_outlined,
+                size: 17,
+                color: context.design.forest,
               ),
-              TextButton(onPressed: onSync, child: const Text('重新載入資料夾 ↗')),
+              Text(
+                'library / collection',
+                style: TextStyle(color: context.design.muted, fontSize: 11),
+              ),
+              TextButton(onPressed: onSync, child: Text('重新載入資料夾 ↗')),
             ],
           ),
         ),
       ),
-      const SizedBox(height: 30),
+      SizedBox(height: 30),
       LayoutBuilder(
         builder: (context, bounds) {
           final title = Text(
@@ -49,7 +53,7 @@ class ShelfToolbar extends StatelessWidget {
           );
           final search = TextField(
             onChanged: onSearch,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: '尋找一份文件',
               prefixIcon: Icon(Icons.search, size: 17),
               contentPadding: EdgeInsets.symmetric(
@@ -61,12 +65,12 @@ class ShelfToolbar extends StatelessWidget {
           return bounds.maxWidth < 440
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [title, const SizedBox(height: 16), search],
+                  children: [title, SizedBox(height: 16), search],
                 )
               : Row(
                   children: [
                     Expanded(child: title),
-                    const SizedBox(width: 20),
+                    SizedBox(width: 20),
                     SizedBox(width: 220, child: search),
                   ],
                 );

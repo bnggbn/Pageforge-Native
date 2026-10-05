@@ -58,4 +58,5 @@ try {
 $release = Join-Path $appDirectory 'build\windows\x64\runner\Release'
 Copy-Item -LiteralPath (Join-Path $projectRoot 'bin\pageforge-backend.exe') -Destination $release
 Copy-Item -LiteralPath (Join-Path $projectRoot 'pageforge.config.json') -Destination $release
+Copy-Item -LiteralPath (Join-Path $projectRoot 'pageforge.design.json') -Destination $release
 Write-Host "Built: $release\pageforge.exe"
