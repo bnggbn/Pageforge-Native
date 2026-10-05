@@ -14,6 +14,7 @@ import (
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/api"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/config"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/design"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/library"
 )
 
@@ -43,6 +44,7 @@ func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	application := api.New(store, c, cancel)
+	application.Design = design.New(*root)
 	server := &http.Server{Handler: application.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
 	if *parentPipe {
 		go func() { io.Copy(io.Discard, os.Stdin); cancel() }()

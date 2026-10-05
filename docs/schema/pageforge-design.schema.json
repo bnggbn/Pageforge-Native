@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pageforge appearance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "theme",
+    "library",
+    "reader"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "paper",
+        "ink",
+        "accent",
+        "forest",
+        "muted",
+        "headingFont"
+      ],
+      "properties": {
+        "paper": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "ink": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "forest": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "muted": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "headingFont": {
+          "enum": [
+            "Georgia",
+            "Noto Serif TC",
+            "Microsoft JhengHei"
+          ]
+        }
+      }
+    },
+    "library": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "showInvitation",
+        "cardWidth",
+        "gap",
+        "coverArt"
+      ],
+      "properties": {
+        "showInvitation": {
+          "type": "boolean"
+        },
+        "cardWidth": {
+          "type": "number",
+          "minimum": 220,
+          "maximum": 340
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 12,
+          "maximum": 48
+        },
+        "coverArt": {
+          "enum": [
+            "auto",
+            "rings",
+            "frames",
+            "waves",
+            "leaf",
+            "arch"
+          ]
+        }
+      }
+    },
+    "reader": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pageWidth",
+        "lineHeight"
+      ],
+      "properties": {
+        "pageWidth": {
+          "type": "number",
+          "minimum": 480,
+          "maximum": 1000
+        },
+        "lineHeight": {
+          "type": "number",
+          "minimum": 1.3,
+          "maximum": 2.4
+        }
+      }
+    }
+  }
+}

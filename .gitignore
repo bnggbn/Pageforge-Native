@@ -15,3 +15,6 @@ library/.trash/
 library/collection/*
 !library/collection/01-Pageforge閱讀指南.md
 !library/collection/04-閱讀札記.txt
+
+pageforge.design.local.json
+.pageforge-design-*

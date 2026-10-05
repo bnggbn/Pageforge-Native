@@ -13,10 +13,12 @@ import (
 	"strings"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/config"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/design"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/library"
 )
 
 type Server struct {
+	Design   *design.Store
 	Store    *library.Store
 	Config   config.Config
 	Token    string
@@ -32,6 +34,8 @@ func New(store *library.Store, c config.Config, shutdown func()) *Server {
 }
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /v1/design", s.loadDesign)
+	mux.HandleFunc("PUT /v1/design", s.saveDesign)
 	mux.HandleFunc("GET /v1/status", func(w http.ResponseWriter, r *http.Request) {
 		send(w, map[string]any{"name": "Pageforge", "config": s.Config})
 	})
@@ -98,7 +102,7 @@ func respond(w http.ResponseWriter, value any, err error) {
 		return
 	}
 	status := http.StatusBadRequest
-	if errors.Is(err, library.ErrConflict) {
+	if errors.Is(err, library.ErrConflict) || errors.Is(err, design.ErrConflict) {
 		status = http.StatusConflict
 	} else if errors.Is(err, os.ErrNotExist) {
 		status = http.StatusNotFound
