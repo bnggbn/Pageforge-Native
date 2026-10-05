@@ -10,8 +10,10 @@ class ParagraphEntry {
     this.occurrence,
     this.bounds, {
     Offset? endPoint,
+    this.isHeading = false,
   }) : _endPoint = endPoint;
   final String text, hash;
+  final bool isHeading;
   final int occurrence;
   final Rect bounds;
   final Offset? _endPoint;
@@ -51,9 +53,17 @@ class ParagraphIndex {
     required bool plainText,
   }) {
     final paragraphs = <RenderParagraph>[];
-    void visit(RenderObject node) {
-      if (node is RenderParagraph) paragraphs.add(node);
-      node.visitChildren(visit);
+    final headings = <RenderParagraph>{};
+    void visit(RenderObject node, [bool heading = false]) {
+      heading =
+          heading ||
+          (node is RenderSemanticsAnnotations &&
+              node.properties.header == true);
+      if (node is RenderParagraph) {
+        paragraphs.add(node);
+        if (heading) headings.add(node);
+      }
+      node.visitChildren((child) => visit(child, heading));
     }
 
     visit(article);
@@ -125,7 +135,14 @@ class ParagraphIndex {
           ),
         );
         result.add(
-          ParagraphEntry(value, hash, occurrence, bounds!, endPoint: endPoint),
+          ParagraphEntry(
+            value,
+            hash,
+            occurrence,
+            bounds!,
+            endPoint: endPoint,
+            isHeading: headings.contains(paragraph),
+          ),
         );
       }
     }

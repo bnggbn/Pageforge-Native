@@ -18,7 +18,13 @@ class DocumentSelection extends StatefulWidget {
   final String? plainText;
   final ScrollController scrollController;
   final ValueChanged<String> onQuote;
-  final void Function(String quote, Offset? first, Offset? last)? onCreateNote;
+  final void Function(
+    String quote,
+    Offset? first,
+    Offset? last,
+    String Function(Offset) clipBefore,
+  )?
+  onCreateNote;
 
   @override
   State<DocumentSelection> createState() => _DocumentSelectionState();
@@ -48,7 +54,12 @@ class _DocumentSelectionState extends State<DocumentSelection> {
                 onPressed: () {
                   final points = delegate.selectedPoints();
                   region.hideToolbar();
-                  widget.onCreateNote!(selected, points.$1, points.$2);
+                  widget.onCreateNote!(
+                    selected,
+                    points.$1,
+                    points.$2,
+                    delegate.contentBefore,
+                  );
                 },
               ),
             ...region.contextMenuButtonItems,
@@ -123,6 +134,35 @@ class _ParagraphSelectionDelegate extends StaticSelectionContainerDelegate {
     return (point(selected.first, true), point(selected.last, false));
   }
 
+  String contentBefore(Offset boundary) {
+    final fragments = <String>[];
+    for (final selectable in selectables) {
+      final content = selectable.getSelectedContent()?.plainText;
+      if (content == null || content.isEmpty) continue;
+      final selection = selectable.value.startSelectionPoint;
+      if (selection == null) continue;
+      final point = MatrixUtils.transformPoint(
+        selectable.getTransformTo(null),
+        selection.localPosition,
+      );
+      if (point.dy >= boundary.dy) break;
+      fragments.add(content);
+    }
+    return joinFragments(fragments);
+  }
+
+  String joinFragments(List<String> fragments) {
+    if (fragments.isEmpty) return '';
+    final text = StringBuffer(fragments.first);
+    for (var i = 1; i < fragments.length; i++) {
+      if (!fragments[i - 1].endsWith('\n') && !fragments[i].startsWith('\n')) {
+        text.write('\n');
+      }
+      text.write(fragments[i]);
+    }
+    return text.toString();
+  }
+
   @override
   SelectedContent? getSelectedContent() {
     if (plainText case final source?) return _plainSelection(source);
@@ -132,13 +172,6 @@ class _ParagraphSelectionDelegate extends StaticSelectionContainerDelegate {
           if (content.plainText.isNotEmpty) content.plainText,
     ];
     if (fragments.isEmpty) return null;
-    final text = StringBuffer(fragments.first);
-    for (var i = 1; i < fragments.length; i++) {
-      if (!fragments[i - 1].endsWith('\n') && !fragments[i].startsWith('\n')) {
-        text.write('\n');
-      }
-      text.write(fragments[i]);
-    }
-    return SelectedContent(plainText: text.toString());
+    return SelectedContent(plainText: joinFragments(fragments));
   }
 }

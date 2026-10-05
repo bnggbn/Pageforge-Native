@@ -7,8 +7,14 @@ import 'paragraph_location.dart';
 
 class AnnotatedArticleController {
   _AnnotatedArticleState? _state;
-  NotePassage selection(String quote, Offset? first, Offset? last) =>
-      _state?.selection(quote, first, last) ?? NotePassage(quote, '全文筆記');
+  NotePassage selection(
+    String quote,
+    Offset? first,
+    Offset? last,
+    String Function(Offset) clipBefore,
+  ) =>
+      _state?.selection(quote, first, last, clipBefore) ??
+      NotePassage(quote, '全文筆記');
   Future<bool> reveal(String location, String quote) =>
       _state?.reveal(location, quote) ?? Future.value(false);
 }
@@ -84,17 +90,41 @@ class _AnnotatedArticleState extends State<AnnotatedArticle> {
     });
   }
 
-  NotePassage selection(String quote, Offset? first, Offset? last) {
+  NotePassage selection(
+    String quote,
+    Offset? first,
+    Offset? last,
+    String Function(Offset) clipBefore,
+  ) {
     final root = rootKey.currentContext?.findRenderObject();
     if (root is RenderBox && first != null && last != null) {
       final a = index.at(root.globalToLocal(first)),
           b = index.at(root.globalToLocal(last));
-      if (a != null && b != null) return index.passage(quote, a, b);
+      if (a != null && b != null) return noteSelection(quote, a, b, clipBefore);
     }
     final matched = index.resolve('', quote);
     return matched.isEmpty
         ? NotePassage(quote, '全文筆記')
-        : index.passage(quote, matched.first, matched.last);
+        : noteSelection(quote, matched.first, matched.last, clipBefore);
+  }
+
+  NotePassage noteSelection(
+    String quote,
+    ParagraphEntry first,
+    ParagraphEntry last,
+    String Function(Offset) clipBefore,
+  ) {
+    final selected = index.entries;
+    final start = selected.indexOf(first), end = selected.indexOf(last);
+    final root = rootKey.currentContext?.findRenderObject();
+    if (root is RenderBox) {
+      for (var i = start + 1; i <= end; i++) {
+        if (!selected[i].isHeading) continue;
+        final boundary = root.localToGlobal(Offset(0, selected[i].bounds.top));
+        return index.passage(clipBefore(boundary), first, selected[i - 1]);
+      }
+    }
+    return index.passage(quote, first, last);
   }
 
   Future<bool> reveal(String location, String quote) async {

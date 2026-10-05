@@ -100,8 +100,9 @@ class _TextDocumentViewState extends State<TextDocumentView> {
     scrollController: scroll,
     onCreateNote: widget.onCreateNote == null
         ? null
-        : (quote, first, last) =>
-              widget.onCreateNote!(article.selection(quote, first, last)),
+        : (quote, first, last, clipBefore) => widget.onCreateNote!(
+            article.selection(quote, first, last, clipBefore),
+          ),
     child: AnnotatedArticle(
       controller: article,
       notes: widget.notes,
