@@ -42,6 +42,9 @@ class ArticleBody extends StatelessWidget {
             imageBuilder: (uri, title, alt) =>
                 Text('[圖片：${alt ?? title ?? '未提供說明'}]'),
           )
-        : Text(content, style: body);
+        : SizedBox(
+            width: double.infinity,
+            child: Text(content, style: body),
+          );
   }
 }

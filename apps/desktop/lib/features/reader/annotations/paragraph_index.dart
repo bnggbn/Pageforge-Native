@@ -4,10 +4,18 @@ import 'package:flutter/rendering.dart';
 import 'paragraph_location.dart';
 
 class ParagraphEntry {
-  const ParagraphEntry(this.text, this.hash, this.occurrence, this.bounds);
+  const ParagraphEntry(
+    this.text,
+    this.hash,
+    this.occurrence,
+    this.bounds, {
+    Offset? endPoint,
+  }) : _endPoint = endPoint;
   final String text, hash;
   final int occurrence;
   final Rect bounds;
+  final Offset? _endPoint;
+  Offset get endPoint => _endPoint ?? bounds.bottomRight;
 }
 
 /// Index existing rendered text; never split Markdown into isolated selection areas.
@@ -92,7 +100,33 @@ class ParagraphIndex {
         );
         final occurrence = counts[hash] ?? 0;
         counts[hash] = occurrence + 1;
-        result.add(ParagraphEntry(value, hash, occurrence, bounds!));
+        var end = range.end;
+        while (end > range.start &&
+            text.substring(end - 1, end).trim().isEmpty) {
+          end--;
+        }
+        var lastStart = end - 1;
+        if (lastStart > range.start &&
+            text.codeUnitAt(lastStart) >= 0xdc00 &&
+            text.codeUnitAt(lastStart) <= 0xdfff) {
+          lastStart--;
+        }
+        final lastBoxes = paragraph.getBoxesForSelection(
+          TextSelection(baseOffset: lastStart, extentOffset: end),
+        );
+        final lastBox = lastBoxes.isEmpty ? boxes.last : lastBoxes.last;
+        final caret = paragraph.getOffsetForCaret(
+          TextPosition(offset: end),
+          Rect.zero,
+        );
+        final endPoint = root.globalToLocal(
+          paragraph.localToGlobal(
+            Offset(caret.dx, (lastBox.top + lastBox.bottom) / 2),
+          ),
+        );
+        result.add(
+          ParagraphEntry(value, hash, occurrence, bounds!, endPoint: endPoint),
+        );
       }
     }
     entries = result;

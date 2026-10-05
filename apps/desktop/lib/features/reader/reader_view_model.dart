@@ -6,6 +6,7 @@ import 'working_copy.dart';
 import 'reading_position.dart';
 import '../evidence/evidence_wall_view_model.dart';
 import 'annotations/paragraph_location.dart';
+import 'annotations/note_section.dart';
 
 enum ReaderTab { read, notes, edit, history }
 
@@ -123,6 +124,7 @@ class ReaderViewModel extends ChangeNotifier {
   Future<void> selectSection(int value) => _act(() async {
     await position?.flush();
     section = value;
+    noteToReveal = null;
     position?.changeSection(value);
     await repository.saveProgress(id, {
       'revisionId': book!.head.id,
@@ -143,7 +145,15 @@ class ReaderViewModel extends ChangeNotifier {
   Future<void> revealNote(Json note) async {
     if (busy || !await flush()) return;
     final anchor = ParagraphLocation.parse(note['location'] as String);
-    section = anchor?.section ?? 0;
+    final target = book!.format == 'epub'
+        ? noteSection(note, book!.sections)
+        : anchor?.section ?? 0;
+    if (target == null) {
+      error = '無法唯一定位 EPUB 原章節；筆記仍保留當時的引用。';
+      _notify();
+      return;
+    }
+    section = target;
     position?.changeSection(section);
     noteToReveal = note;
     revealRequest++;

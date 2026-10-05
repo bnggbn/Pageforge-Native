@@ -135,7 +135,7 @@ class _AnnotatedArticleState extends State<AnnotatedArticle> {
         clipBehavior: Clip.none,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 48),
+            padding: const EdgeInsets.fromLTRB(0, 12, NoteCloud.extent + 8, 12),
             child: ArticleBody(
               key: articleKey,
               content: widget.content,
@@ -145,8 +145,11 @@ class _AnnotatedArticleState extends State<AnnotatedArticle> {
           ),
           for (final entry in grouped.entries)
             Positioned(
-              right: 0,
-              top: entry.key.bounds.top,
+              left: entry.key.endPoint.dx + 4,
+              top: (entry.key.endPoint.dy - NoteCloud.extent / 2).clamp(
+                0.0,
+                double.infinity,
+              ),
               child: NoteCloud(
                 key: ValueKey(
                   'cloud-${entry.key.hash}-${entry.key.occurrence}',

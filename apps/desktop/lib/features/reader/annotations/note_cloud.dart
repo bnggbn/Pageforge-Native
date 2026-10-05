@@ -3,6 +3,7 @@ import '../../../ui/design_theme.dart';
 
 class NoteCloud extends StatelessWidget {
   const NoteCloud({required this.count, required this.onTap, super.key});
+  static const double extent = 48;
   final int count;
   final VoidCallback onTap;
   @override
@@ -16,16 +17,16 @@ class NoteCloud extends StatelessWidget {
           color: Colors.transparent,
           child: InkResponse(
             onTap: onTap,
-            radius: 23,
+            radius: 24,
             child: SizedBox(
-              width: 42,
-              height: 34,
+              width: extent,
+              height: extent,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   Icon(
                     Icons.cloud,
-                    size: 40,
+                    size: 32,
                     color: context.design.forest.withValues(alpha: .1),
                   ),
                   Icon(
@@ -34,7 +35,7 @@ class NoteCloud extends StatelessWidget {
                     color: context.design.forest,
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       '$count',
                       style: TextStyle(

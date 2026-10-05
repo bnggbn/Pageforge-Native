@@ -5,6 +5,7 @@ import '../reader_view_model.dart';
 import 'spreadsheet_view.dart';
 import 'text_document_view.dart';
 import '../annotations/note_composer.dart';
+import '../annotations/note_section.dart';
 import '../annotations/paragraph_notes_dialog.dart';
 
 class DocumentView extends StatelessWidget {
@@ -21,6 +22,9 @@ class DocumentView extends StatelessWidget {
     }
     if (book.format == 'xlsx') return SpreadsheetView(model: model);
     final sections = book.sections;
+    final chapterNotes = book.format == 'epub'
+        ? NoteSectionIndex(sections)
+        : null;
     final section = sections.isEmpty
         ? 0
         : model.section.clamp(0, sections.length - 1);
@@ -49,7 +53,8 @@ class DocumentView extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: Center(
+          child: Align(
+            alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: context.design.pageWidth),
               child: TextDocumentView(
@@ -59,7 +64,13 @@ class DocumentView extends StatelessWidget {
                 fontSize: model.fontSize,
                 position: model.position!,
                 onQuote: (_) {},
-                notes: book.head.notes,
+                notes: book.format == 'epub'
+                    ? book.head.notes
+                          .where(
+                            (note) => chapterNotes!.resolve(note) == section,
+                          )
+                          .toList()
+                    : book.head.notes,
                 section: section,
                 onCreateNote: (passage) =>
                     openNoteComposer(context, model, passage),
@@ -68,7 +79,7 @@ class DocumentView extends StatelessWidget {
                 revealNote: model.noteToReveal,
                 revealRequest: model.revealRequest,
                 onUnresolved: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('原段落已變动或引用不唯一；筆記保留了當時選取的原文。')),
+                  const SnackBar(content: Text('原段落已變動或引用不唯一；筆記保留了當時選取的原文。')),
                 ),
               ),
             ),
