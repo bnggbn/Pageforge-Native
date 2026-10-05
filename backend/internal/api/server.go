@@ -61,6 +61,8 @@ func (s *Server) Handler() http.Handler {
 		respond(w, map[string]bool{"saved": err == nil}, err)
 	})
 	mux.HandleFunc("POST /v1/books/{id}/diff", s.diff)
+	mux.HandleFunc("GET /v1/books/{id}/evidence-wall", s.loadEvidence)
+	mux.HandleFunc("PUT /v1/books/{id}/evidence-wall", s.saveEvidence)
 	mux.HandleFunc("POST /v1/shutdown", func(w http.ResponseWriter, r *http.Request) {
 		send(w, map[string]bool{"closed": true})
 		go s.Shutdown()

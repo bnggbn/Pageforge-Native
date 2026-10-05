@@ -8,6 +8,13 @@ import (
 )
 
 type Config struct {
+	EvidenceWall struct {
+		MaxCards       int `json:"maxCards"`
+		MaxEdges       int `json:"maxEdges"`
+		CanvasWidth    int `json:"canvasWidth"`
+		CanvasHeight   int `json:"canvasHeight"`
+		SaveDebounceMs int `json:"saveDebounceMs"`
+	} `json:"evidenceWall"`
 	Paths struct {
 		LibraryRoot string `json:"libraryRoot"`
 	} `json:"paths"`
@@ -36,6 +43,11 @@ type Config struct {
 
 func Load(root string) (Config, error) {
 	var c Config
+	c.EvidenceWall.MaxCards = 500
+	c.EvidenceWall.MaxEdges = 1000
+	c.EvidenceWall.CanvasWidth = 6400
+	c.EvidenceWall.CanvasHeight = 6400
+	c.EvidenceWall.SaveDebounceMs = 500
 	defaults, err := os.ReadFile(filepath.Join(root, "pageforge.config.json"))
 	if err != nil {
 		return c, err
@@ -60,6 +72,10 @@ func Load(root string) (Config, error) {
 	}
 	if env := os.Getenv("PAGEFORGE_LIBRARY_ROOT"); env != "" {
 		c.Paths.LibraryRoot = env
+	}
+	if c.EvidenceWall.MaxCards < 1 || c.EvidenceWall.MaxCards > 2000 || c.EvidenceWall.MaxEdges < 1 || c.EvidenceWall.MaxEdges > 4000 ||
+		c.EvidenceWall.CanvasWidth < 1000 || c.EvidenceWall.CanvasWidth > 20000 || c.EvidenceWall.CanvasHeight < 1000 || c.EvidenceWall.CanvasHeight > 20000 || c.EvidenceWall.SaveDebounceMs < 100 {
+		return c, fmt.Errorf("線索牆設定無效")
 	}
 	if c.Paths.LibraryRoot == "" || c.Limits.TextMiB < 1 || c.Limits.RequestMiB < c.Limits.TextMiB*2 ||
 		c.Limits.RevisionCount < 1 || c.Limits.WorkingCopyCount < 1 || c.Diff.MaxCharacters < 1 ||
