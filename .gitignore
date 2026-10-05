@@ -1,0 +1,17 @@
+bin/
+**/build/
+**/.dart_tool/
+**/.flutter-plugins-dependencies
+**/ephemeral/
+**/coverage/
+.preview/
+backend/go-history.json
+*.log
+*.test
+pageforge.config.local.json
+library/books/
+library/.pageforge/
+library/.trash/
+library/collection/*
+!library/collection/01-Pageforge閱讀指南.md
+!library/collection/04-閱讀札記.txt

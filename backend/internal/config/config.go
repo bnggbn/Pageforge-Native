@@ -1,0 +1,89 @@
+package config
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
+type Config struct {
+	Paths struct {
+		LibraryRoot string `json:"libraryRoot"`
+	} `json:"paths"`
+	Limits struct {
+		TextMiB            int `json:"textMiB"`
+		DocumentMiB        int `json:"documentMiB"`
+		RequestMiB         int `json:"requestMiB"`
+		RevisionCount      int `json:"revisionCount"`
+		WorkingCopyCount   int `json:"workingCopyCount"`
+		SnapshotNotesMiB   int `json:"snapshotNotesMiB"`
+		NoteCharacters     int `json:"noteCharacters"`
+		QuoteCharacters    int `json:"quoteCharacters"`
+		LocationCharacters int `json:"locationCharacters"`
+	} `json:"limits"`
+	Reading struct {
+		DefaultFontSize    int   `json:"defaultFontSize"`
+		FontSizes          []int `json:"fontSizes"`
+		ProgressDebounceMs int   `json:"progressDebounceMs"`
+		DraftDebounceMs    int   `json:"draftDebounceMs"`
+	} `json:"reading"`
+	Diff struct {
+		MaxCharacters int `json:"maxCharacters"`
+		TimeoutMs     int `json:"timeoutMs"`
+	} `json:"diff"`
+}
+
+func Load(root string) (Config, error) {
+	var c Config
+	defaults, err := os.ReadFile(filepath.Join(root, "pageforge.config.json"))
+	if err != nil {
+		return c, err
+	}
+	var merged map[string]any
+	if err = json.Unmarshal(defaults, &merged); err != nil {
+		return c, err
+	}
+	local, err := os.ReadFile(filepath.Join(root, "pageforge.config.local.json"))
+	if err == nil {
+		var override map[string]any
+		if err = json.Unmarshal(local, &override); err != nil {
+			return c, err
+		}
+		merge(merged, override)
+	} else if !os.IsNotExist(err) {
+		return c, err
+	}
+	encoded, _ := json.Marshal(merged)
+	if err = json.Unmarshal(encoded, &c); err != nil {
+		return c, err
+	}
+	if env := os.Getenv("PAGEFORGE_LIBRARY_ROOT"); env != "" {
+		c.Paths.LibraryRoot = env
+	}
+	if c.Paths.LibraryRoot == "" || c.Limits.TextMiB < 1 || c.Limits.RequestMiB < c.Limits.TextMiB*2 ||
+		c.Limits.RevisionCount < 1 || c.Limits.WorkingCopyCount < 1 || c.Diff.MaxCharacters < 1 ||
+		c.Diff.TimeoutMs < 1 || c.Reading.DefaultFontSize < 1 || c.Reading.DraftDebounceMs < 1 {
+		return c, fmt.Errorf("設定容量、閱讀或 diff 限制無效")
+	}
+	if !filepath.IsAbs(c.Paths.LibraryRoot) {
+		c.Paths.LibraryRoot = filepath.Join(root, c.Paths.LibraryRoot)
+	}
+	c.Paths.LibraryRoot, err = filepath.Abs(c.Paths.LibraryRoot)
+	return c, err
+}
+
+func merge(base, override map[string]any) {
+	for k, v := range override {
+		if child, ok := v.(map[string]any); ok {
+			target, ok := base[k].(map[string]any)
+			if !ok {
+				target = map[string]any{}
+				base[k] = target
+			}
+			merge(target, child)
+		} else {
+			base[k] = v
+		}
+	}
+}
