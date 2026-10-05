@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pageforge/features/library/library_screen.dart';
 import 'package:pageforge/ui/theme.dart';
+import 'package:pageforge/features/reader/views/editor_view.dart';
 import 'fake_repository.dart';
 
 void main() {
@@ -27,6 +28,26 @@ void main() {
     await tester.tap(find.text('編輯'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '# A new version');
+    final controller = tester
+        .widget<TextField>(find.byType(TextField))
+        .controller;
+    await tester.tap(find.byTooltip('放大字級'));
+    await tester.pump();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller,
+      same(controller),
+    );
+    await tester.tap(find.text('筆記'));
+    await tester.pump();
+    expect(find.byType(EditorView), findsNothing);
+    expect(find.byType(TextField), findsNWidgets(3));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('編輯'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '# A new version',
+    );
     await tester.tap(find.text('保存為新版本'));
     await tester.pumpAndSettle();
     expect(find.text('A new version'), findsOneWidget);

@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../../data/library_repository.dart';
 import '../../ui/theme.dart';
 import 'reader_view_model.dart';
-import 'views/document_view.dart';
-import 'views/editor_view.dart';
-import 'views/history_view.dart';
-import 'views/notes_view.dart';
+import 'views/reader_pane.dart';
+import 'views/reader_toolbar.dart';
 import 'views/working_copy_bar.dart';
 
 class ReaderScreen extends StatefulWidget {
@@ -81,43 +79,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                   const Divider(),
                   if (book != null && model.working != null) ...[
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        for (final entry in [
-                          (ReaderTab.read, '閱讀'),
-                          (ReaderTab.notes, '筆記'),
-                          if (book.editable) (ReaderTab.edit, '編輯'),
-                          (ReaderTab.history, '版本'),
-                        ])
-                          TextButton(
-                            onPressed: model.busy
-                                ? null
-                                : () => model.changeTab(entry.$1),
-                            style: TextButton.styleFrom(
-                              foregroundColor: model.tab == entry.$1
-                                  ? rust
-                                  : muted,
-                            ),
-                            child: Text(entry.$2),
-                          ),
-                        const SizedBox(width: 16),
-                        IconButton(
-                          onPressed: model.canDecreaseFont
-                              ? model.decreaseFont
-                              : null,
-                          icon: const Icon(Icons.text_decrease, size: 18),
-                        ),
-                        IconButton(
-                          onPressed: model.canIncreaseFont
-                              ? model.increaseFont
-                              : null,
-                          icon: const Icon(Icons.text_increase, size: 18),
-                        ),
-                      ],
-                    ),
+                    ReaderToolbar(model: model),
                     WorkingCopyBar(copy: model.working!),
                   ],
                   if (model.error.isNotEmpty)
@@ -139,29 +101,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   if (model.busy) const LinearProgressIndicator(),
                   const SizedBox(height: 12),
                   if (book != null && model.working != null)
-                    Expanded(
-                      child: switch (model.tab) {
-                        ReaderTab.edit => EditorView(model: model),
-                        ReaderTab.history => HistoryView(model: model),
-                        ReaderTab.notes => LayoutBuilder(
-                          builder: (context, constraints) =>
-                              constraints.maxWidth > 800
-                              ? Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(child: DocumentView(model: model)),
-                                    const SizedBox(width: 32),
-                                    SizedBox(
-                                      width: 330,
-                                      child: NotesView(model: model),
-                                    ),
-                                  ],
-                                )
-                              : NotesView(model: model),
-                        ),
-                        ReaderTab.read => DocumentView(model: model),
-                      },
-                    ),
+                    Expanded(child: ReaderPane(model: model)),
                 ],
               ),
             );
