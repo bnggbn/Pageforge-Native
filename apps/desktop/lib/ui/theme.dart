@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+const editorialFace = 'Georgia';
+const editorialFallback = ['Noto Serif TC', 'Microsoft JhengHei'];
+
 const paper = Color(0xfff5f2e9);
 const ink = Color(0xff343a32);
 const rust = Color(0xffa84b36);
@@ -13,7 +16,8 @@ ThemeData pageforgeTheme() => ThemeData(
   fontFamily: 'Microsoft JhengHei',
   textTheme: const TextTheme(
     displaySmall: TextStyle(
-      fontFamily: 'Georgia',
+      fontFamily: editorialFace,
+      fontFamilyFallback: editorialFallback,
       color: ink,
       fontSize: 40,
       letterSpacing: -1.5,
