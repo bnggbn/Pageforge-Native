@@ -11,7 +11,10 @@ class EvidenceCard extends StatelessWidget {
     required this.selected,
     required this.onTap,
     required this.onReveal,
-    required this.onDrag,
+    required this.onDragStart,
+    required this.onDragUpdate,
+    required this.onDragEnd,
+    required this.onDragCancel,
     required this.onPinTap,
     required this.onPinStart,
     required this.onPinUpdate,
@@ -22,7 +25,8 @@ class EvidenceCard extends StatelessWidget {
   final int number;
   final bool selected;
   final VoidCallback onTap, onReveal, onPinTap, onPinStart, onPinEnd;
-  final ValueChanged<Offset> onDrag, onPinUpdate;
+  final ValueChanged<Offset> onDragStart, onDragUpdate, onPinUpdate;
+  final VoidCallback onDragEnd, onDragCancel;
   @override
   Widget build(BuildContext context) => Material(
     color: Color.lerp(context.design.paper, Colors.white, .55),
@@ -59,27 +63,39 @@ class EvidenceCard extends StatelessWidget {
             ),
           ),
         ),
-        GestureDetector(
-          dragStartBehavior: DragStartBehavior.down,
-          key: ValueKey('move-${note['id']}'),
-          behavior: HitTestBehavior.opaque,
-          onPanUpdate: (details) => onDrag(details.delta),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '線索 $number',
-                    style: TextStyle(color: context.design.muted, fontSize: 11),
-                  ),
+        MouseRegion(
+          cursor: SystemMouseCursors.grab,
+          child: Listener(
+            onPointerCancel: (_) => onDragCancel(),
+            child: GestureDetector(
+              dragStartBehavior: DragStartBehavior.down,
+              key: ValueKey('move-${note['id']}'),
+              behavior: HitTestBehavior.opaque,
+              onPanStart: (details) => onDragStart(details.globalPosition),
+              onPanUpdate: (details) => onDragUpdate(details.globalPosition),
+              onPanEnd: (_) => onDragEnd(),
+              onPanCancel: onDragCancel,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '線索 $number',
+                        style: TextStyle(
+                          color: context.design.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.drag_indicator,
+                      size: 16,
+                      color: context.design.muted,
+                    ),
+                  ],
                 ),
-                Icon(
-                  Icons.drag_indicator,
-                  size: 16,
-                  color: context.design.muted,
-                ),
-              ],
+              ),
             ),
           ),
         ),

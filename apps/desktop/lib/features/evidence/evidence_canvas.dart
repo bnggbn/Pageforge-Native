@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models.dart';
 import '../../ui/design_theme.dart';
 import 'evidence_card.dart';
+import 'evidence_card_drag.dart';
 import 'evidence_connections.dart';
 import 'evidence_edge_dialog.dart';
 import 'evidence_geometry.dart';
@@ -22,6 +23,7 @@ class EvidenceCanvas extends StatefulWidget {
 
 class _EvidenceCanvasState extends State<EvidenceCanvas> {
   final transform = TransformationController(), viewport = GlobalKey();
+  final drag = EvidenceCardDrag();
   Offset? pointer;
   int focusRequest = -1;
   @override
@@ -38,12 +40,20 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
   void dispose() {
     transform.removeListener(redraw);
     transform.dispose();
+    drag.dispose();
     super.dispose();
   }
 
   Offset scenePoint(Offset global) {
     final box = viewport.currentContext!.findRenderObject() as RenderBox;
     return transform.toScene(box.globalToLocal(global));
+  }
+
+  void finishDrag() {
+    final moved = drag.finish();
+    if (moved != null && moved.position != moved.origin) {
+      widget.model.move(moved.id, moved.position.dx, moved.position.dy);
+    }
   }
 
   void finishLink() {
@@ -129,47 +139,69 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
                     children: [
                       Positioned.fill(
                         child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: EvidenceConnections(
-                              cards: cards,
-                              edges: model.edges,
-                              color: const Color(0xffa83b35),
-                              source: model.linkSource,
-                              pointer: pointer,
+                          child: RepaintBoundary(
+                            child: CustomPaint(
+                              painter: EvidenceConnections(
+                                drag: drag,
+                                cards: cards,
+                                edges: model.edges,
+                                color: const Color(0xffa83b35),
+                                source: model.linkSource,
+                                pointer: pointer,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       for (final card in cards)
                         if (evidenceCardRect(card).overlaps(visible))
-                          Positioned(
-                            left: (card['x'] as num).toDouble(),
-                            top: (card['y'] as num).toDouble(),
-                            width: 280,
-                            height: 240,
-                            child: EvidenceCard(
-                              key: ValueKey('evidence-card-${card['noteId']}'),
-                              note: model.notes[card['noteId']]!,
-                              number: indices[card['noteId']]!,
-                              selected: model.linkSource == card['noteId'],
-                              onTap: () => model.linkSource == null
-                                  ? widget.onOpen(model.notes[card['noteId']]!)
-                                  : model.connect(card['noteId'] as String),
-                              onReveal: () =>
-                                  widget.onReveal(model.notes[card['noteId']]!),
-                              onDrag: (delta) => model.move(
-                                card['noteId'] as String,
-                                (card['x'] as num).toDouble() + delta.dx,
-                                (card['y'] as num).toDouble() + delta.dy,
+                          AnimatedBuilder(
+                            animation: drag,
+                            builder: (_, child) {
+                              final point = drag.positionOf(card);
+                              return Positioned(
+                                left: point.dx,
+                                top: point.dy,
+                                width: 280,
+                                height: 240,
+                                child: child!,
+                              );
+                            },
+                            child: RepaintBoundary(
+                              child: EvidenceCard(
+                                key: ValueKey(
+                                  'evidence-card-${card['noteId']}',
+                                ),
+                                note: model.notes[card['noteId']]!,
+                                number: indices[card['noteId']]!,
+                                selected: model.linkSource == card['noteId'],
+                                onTap: () => model.linkSource == null
+                                    ? widget.onOpen(
+                                        model.notes[card['noteId']]!,
+                                      )
+                                    : model.connect(card['noteId'] as String),
+                                onReveal: () => widget.onReveal(
+                                  model.notes[card['noteId']]!,
+                                ),
+                                onDragStart: (global) =>
+                                    drag.begin(card, scenePoint(global)),
+                                onDragUpdate: (global) => drag.update(
+                                  scenePoint(global),
+                                  model.width,
+                                  model.height,
+                                ),
+                                onDragEnd: finishDrag,
+                                onDragCancel: drag.cancel,
+                                onPinTap: () => model.linkSource == null
+                                    ? model.beginLink(card['noteId'] as String)
+                                    : model.connect(card['noteId'] as String),
+                                onPinStart: () =>
+                                    model.beginLink(card['noteId'] as String),
+                                onPinUpdate: (global) => setState(
+                                  () => pointer = scenePoint(global),
+                                ),
+                                onPinEnd: finishLink,
                               ),
-                              onPinTap: () => model.linkSource == null
-                                  ? model.beginLink(card['noteId'] as String)
-                                  : model.connect(card['noteId'] as String),
-                              onPinStart: () =>
-                                  model.beginLink(card['noteId'] as String),
-                              onPinUpdate: (global) =>
-                                  setState(() => pointer = scenePoint(global)),
-                              onPinEnd: finishLink,
                             ),
                           ),
                     ],

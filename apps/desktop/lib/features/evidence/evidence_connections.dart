@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 import '../../data/models.dart';
 import 'evidence_geometry.dart';
+import 'evidence_card_drag.dart';
 
 class EvidenceConnections extends CustomPainter {
-  const EvidenceConnections({
+  EvidenceConnections({
     required this.cards,
     required this.edges,
     required this.color,
+    required this.drag,
     this.source,
     this.pointer,
-  });
+  }) : super(repaint: drag);
+  final EvidenceCardDrag drag;
   final List<Json> cards, edges;
   final Color color;
   final String? source;
   final Offset? pointer;
   @override
   void paint(Canvas canvas, Size size) {
-    final pins = {for (final card in cards) card['noteId']: evidencePin(card)};
+    final pins = {
+      for (final card in cards)
+        card['noteId']: drag.positionOf(card) + const Offset(140, 15),
+    };
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.stroke
@@ -55,6 +61,7 @@ class EvidenceConnections extends CustomPainter {
 
   @override
   bool shouldRepaint(EvidenceConnections old) =>
+      !identical(drag, old.drag) ||
       !identical(cards, old.cards) ||
       !identical(edges, old.edges) ||
       source != old.source ||
