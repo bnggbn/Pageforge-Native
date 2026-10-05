@@ -50,7 +50,7 @@ void main() {
       await expectLater(next.flush(), throwsException);
       expect(next.card(a)!['x'], 500);
       expect(next.dirty, true);
-      expect(repo.savedWall!['cards'][0]['x'], 180);
+      expect(repo.savedWall!['topics'][0]['cards'][0]['x'], 180);
       repo.failWall = false;
       await next.flush();
       expect(next.dirty, false);
@@ -97,7 +97,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(wall.edges, hasLength(1));
     await wall.flush();
-    expect(repo.savedWall!['edges'], hasLength(1));
+    expect(repo.savedWall!['topics'][0]['edges'], hasLength(1));
     await tester.pumpWidget(const SizedBox());
     wall.dispose();
     await tester.pumpAndSettle();

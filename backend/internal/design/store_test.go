@@ -115,3 +115,23 @@ func TestConcurrentSaveKeepsOneWinner(t *testing.T) {
 		t.Fatalf("success=%d conflicts=%d", success, conflicts)
 	}
 }
+
+func TestParagraphGapDefaultAndLimits(t *testing.T) {
+	data, _ := fixture(t)
+	var source map[string]any
+	json.Unmarshal(data, &source)
+	reader := source["reader"].(map[string]any)
+	delete(reader, "paragraphGapLines")
+	old, _ := json.Marshal(source)
+	d, err := Decode(old)
+	if err != nil || d.Reader.ParagraphGapLines != 1 {
+		t.Fatal("old appearance did not default to one line", err)
+	}
+	for _, value := range []any{nil, -1, 4, "large"} {
+		reader["paragraphGapLines"] = value
+		invalid, _ := json.Marshal(source)
+		if _, err := Decode(invalid); err == nil {
+			t.Fatal("invalid paragraph gap accepted", value)
+		}
+	}
+}

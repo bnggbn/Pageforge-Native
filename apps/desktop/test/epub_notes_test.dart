@@ -96,7 +96,7 @@ void main() {
       expect(find.byType(NoteCloud), findsOneWidget);
       expect(tester.widget<NoteCloud>(find.byType(NoteCloud)).count, 2);
       void checkPlacement() {
-        final content = chapters[1]['text'] as String;
+        const content = shared;
         final render = tester.renderObject<RenderParagraph>(
           find.descendant(
             of: find.text(content),
@@ -122,7 +122,8 @@ void main() {
         expect(cloud.left, closeTo(expected.dx + 4, .5));
         expect(cloud.center.dy, closeTo(expected.dy, .5));
         expect(cloud.right, lessThanOrEqualTo(tester.view.physicalSize.width));
-        expect(render.localToGlobal(Offset.zero).dy, lessThan(150));
+        final first = tester.getTopLeft(find.text('Second chapter.\n\n'));
+        expect(first.dy, lessThan(150));
       }
 
       checkPlacement();

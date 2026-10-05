@@ -8,7 +8,7 @@ class DesignDocument {
   static const fonts = ['Georgia', 'Noto Serif TC', 'Microsoft JhengHei'];
   static const motifs = ['auto', 'rings', 'frames', 'waves', 'leaf', 'arch'];
   static final defaults = DesignDocument.parse(
-    r'''{"schemaVersion":1,"theme":{"paper":"#f5f2e9","ink":"#343a32","accent":"#a84b36","forest":"#344a42","muted":"#858879","headingFont":"Georgia"},"library":{"showInvitation":true,"cardWidth":260,"gap":28,"coverArt":"auto"},"reader":{"pageWidth":780,"lineHeight":1.95}}''',
+    r'''{"schemaVersion":1,"theme":{"paper":"#f5f2e9","ink":"#343a32","accent":"#a84b36","forest":"#344a42","muted":"#858879","headingFont":"Georgia"},"library":{"showInvitation":true,"cardWidth":260,"gap":28,"coverArt":"auto"},"reader":{"pageWidth":780,"lineHeight":1.95,"paragraphGapLines":1}}''',
   );
 
   static DesignDocument parse(String source) {
@@ -41,7 +41,10 @@ class DesignDocument {
       'gap',
       'coverArt',
     ], 'library');
-    _keys(reader, ['pageWidth', 'lineHeight'], 'reader');
+    if (!reader.containsKey('paragraphGapLines')) {
+      reader['paragraphGapLines'] = 1;
+    }
+    _keys(reader, ['pageWidth', 'lineHeight', 'paragraphGapLines'], 'reader');
     for (final key in ['paper', 'ink', 'accent', 'forest', 'muted']) {
       if (theme[key] is! String ||
           !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(theme[key] as String)) {
@@ -61,6 +64,7 @@ class DesignDocument {
     _range(library['gap'], 12, 48, 'library.gap');
     _range(reader['pageWidth'], 480, 1000, 'reader.pageWidth');
     _range(reader['lineHeight'], 1.3, 2.4, 'reader.lineHeight');
+    _range(reader['paragraphGapLines'], 0, 3, 'reader.paragraphGapLines');
     return DesignDocument._(value);
   }
 

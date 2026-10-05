@@ -16,6 +16,7 @@
   },
   "reader": {
     "pageWidth": 780,
-    "lineHeight": 1.95
+    "lineHeight": 1.95,
+    "paragraphGapLines": 1
   }
 }

@@ -4,10 +4,31 @@ import '../reader/reader_view_model.dart';
 import '../reader/annotations/note_composer.dart';
 import '../reader/annotations/paragraph_notes_dialog.dart';
 import 'evidence_canvas.dart';
+import 'evidence_topic_bar.dart';
 
 class EvidenceWallView extends StatelessWidget {
   const EvidenceWallView({required this.reader, super.key});
   final ReaderViewModel reader;
+  Future<void> _newNote(BuildContext context) async {
+    final wall = reader.wall!;
+    final target = wall.activeTopicId;
+    final before = reader.book!.head.notes.map((n) => n['id']).toSet();
+    await openNoteComposer(context, reader);
+    if (!context.mounted || wall.isAllTopic || wall.activeTopicId != target) {
+      return;
+    }
+    final added = reader.book!.head.notes
+        .where((n) => !before.contains(n['id']))
+        .map((n) => n['id'] as String)
+        .toSet();
+    if (added.isNotEmpty) {
+      wall.setTopicNotes({
+        ...wall.cards.map((c) => c['noteId'] as String),
+        ...added,
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final wall = reader.wall!;
@@ -15,6 +36,10 @@ class EvidenceWallView extends StatelessWidget {
       listenable: wall,
       builder: (context, _) => Column(
         children: [
+          EvidenceTopicBar(
+            model: wall,
+            disabled: reader.busy || wall.busy || !wall.loaded,
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Wrap(
@@ -23,7 +48,7 @@ class EvidenceWallView extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Text(
-                  '線索牆 · ${wall.notes.length} 則筆記',
+                  '線索牆 · ${wall.cards.length} 則線索',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 Text(
@@ -31,11 +56,9 @@ class EvidenceWallView extends StatelessWidget {
                   style: TextStyle(color: context.design.muted, fontSize: 12),
                 ),
                 TextButton.icon(
-                  onPressed: reader.busy
-                      ? null
-                      : () => openNoteComposer(context, reader),
+                  onPressed: reader.busy ? null : () => _newNote(context),
                   icon: const Icon(Icons.add, size: 17),
-                  label: const Text('新增線索'),
+                  label: const Text('新增筆記'),
                 ),
                 TextButton(
                   onPressed: () => openParagraphNotes(
@@ -87,7 +110,8 @@ class EvidenceWallView extends StatelessWidget {
                 style: TextStyle(color: context.design.rust),
               ),
             ),
-          if (wall.unplaced > 0) Text('另有 ${wall.unplaced} 則筆記可從「全部筆記」查看'),
+          if (wall.isAllTopic && wall.unplaced > 0)
+            Text('另有 ${wall.unplaced} 則筆記可從「全部筆記」查看'),
           if (wall.busy) const LinearProgressIndicator(),
           const Padding(
             padding: EdgeInsets.only(bottom: 10),
@@ -108,15 +132,20 @@ class EvidenceWallView extends StatelessWidget {
                           color: context.design.muted,
                         ),
                         const SizedBox(height: 16),
-                        const Text('從一段文字，開始整理線索。'),
+                        Text(wall.isAllTopic ? '從一段文字，開始整理線索。' : '這個主題還沒有線索。'),
                         const SizedBox(height: 10),
-                        const Text('閱讀時選取文字，使用「作筆記」；筆記會出現在這裡。'),
+                        Text(
+                          wall.isAllTopic
+                              ? '閱讀時作筆記；使用「新增主題」分類整理。'
+                              : '點「挑選線索」，只加入與這個主題相關的筆記。',
+                        ),
                       ],
                     ),
                   )
                 : IgnorePointer(
                     ignoring: reader.busy || wall.busy,
                     child: EvidenceCanvas(
+                      key: ValueKey(wall.activeTopicId),
                       model: wall,
                       onOpen: (note) =>
                           openParagraphNotes(context, reader, null, [note]),

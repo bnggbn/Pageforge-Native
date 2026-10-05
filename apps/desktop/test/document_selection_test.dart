@@ -155,6 +155,47 @@ void main() {
   );
 
   testWidgets(
+    'drag across spaced plain paragraphs preserves the selected separators',
+    (tester) async {
+      var quote = '';
+      await showDocument(
+        tester,
+        'First line\n\nSecond paragraph\nThird line',
+        (value) => quote = value,
+        markdown: false,
+      );
+      final gesture = await tester.startGesture(
+        caret(paragraph(tester, 'First line\n\n'), 6),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await gesture.moveTo(
+        caret(paragraph(tester, 'Second paragraph\nThird line'), 21),
+      );
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(quote, 'line\n\nSecond paragraph\nThir');
+      await shortcut(tester, LogicalKeyboardKey.keyC);
+      expect(clipboard, quote);
+      await gesture.removePointer();
+      final reverse = await tester.startGesture(
+        caret(paragraph(tester, 'Second paragraph\nThird line'), 21),
+        kind: PointerDeviceKind.mouse,
+      );
+      await tester.pump();
+      await reverse.moveTo(caret(paragraph(tester, 'First line\n\n'), 6));
+      await reverse.up();
+      await tester.pumpAndSettle();
+      expect(quote, 'line\n\nSecond paragraph\nThir');
+      await shortcut(tester, LogicalKeyboardKey.keyC);
+      expect(clipboard, quote);
+      await reverse.removePointer();
+      expect(tester.takeException(), isNull);
+    },
+    variant: const TargetPlatformVariant({TargetPlatform.windows}),
+  );
+
+  testWidgets(
     'plain text retains existing line breaks during selection',
     (tester) async {
       var quote = '';
@@ -166,7 +207,7 @@ void main() {
         markdown: false,
       );
       final gesture = await tester.startGesture(
-        caret(paragraph(tester, content), 0),
+        caret(paragraph(tester, 'First line\n\n'), 0),
         kind: PointerDeviceKind.mouse,
       );
       await gesture.up();

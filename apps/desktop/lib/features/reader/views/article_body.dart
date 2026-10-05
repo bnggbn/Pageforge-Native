@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../../../ui/design_theme.dart';
+import 'plain_article.dart';
 
 /// Shared by the live reader and the appearance preview.
 class ArticleBody extends StatelessWidget {
@@ -20,6 +21,10 @@ class ArticleBody extends StatelessWidget {
       height: context.design.lineHeight,
       color: context.design.ink,
     );
+    final lineSize =
+        MediaQuery.textScalerOf(context).scale(fontSize) *
+        context.design.lineHeight;
+    final gap = lineSize * context.design.paragraphGapLines;
     return markdown
         ? MarkdownBody(
             data: content,
@@ -28,6 +33,7 @@ class ArticleBody extends StatelessWidget {
             styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
                 .copyWith(
                   p: body,
+                  blockSpacing: 8 + gap,
                   h1: body.copyWith(
                     fontSize: fontSize * 1.8,
                     height: 1.7,
@@ -42,9 +48,6 @@ class ArticleBody extends StatelessWidget {
             imageBuilder: (uri, title, alt) =>
                 Text('[圖片：${alt ?? title ?? '未提供說明'}]'),
           )
-        : SizedBox(
-            width: double.infinity,
-            child: Text(content, style: body),
-          );
+        : PlainArticle(content: content, style: body, gap: gap);
   }
 }

@@ -27,8 +27,9 @@ type Library struct {
 	CoverArt       string  `json:"coverArt"`
 }
 type Reader struct {
-	PageWidth  float64 `json:"pageWidth"`
-	LineHeight float64 `json:"lineHeight"`
+	ParagraphGapLines float64 `json:"paragraphGapLines"`
+	PageWidth         float64 `json:"pageWidth"`
+	LineHeight        float64 `json:"lineHeight"`
 }
 type Document struct {
 	SchemaVersion int     `json:"schemaVersion"`
@@ -45,6 +46,7 @@ var colorPattern = regexp.MustCompile(`^#[0-9a-fA-F]{6}$`)
 
 func Decode(data []byte) (Document, error) {
 	var document Document
+	document.Reader.ParagraphGapLines = 1
 	if len(data) > MaxBytes {
 		return document, fmt.Errorf("外觀 JSON 超過 16 KiB")
 	}
@@ -71,6 +73,11 @@ func Decode(data []byte) (Document, error) {
 				return document, fmt.Errorf("缺少 %s.%s", name, field)
 			}
 		}
+	}
+	var readerShape map[string]json.RawMessage
+	json.Unmarshal(shape["reader"], &readerShape)
+	if bytes.Equal(readerShape["paragraphGapLines"], []byte("null")) {
+		return document, fmt.Errorf("reader.paragraphGapLines 不可為 null")
 	}
 	return document, document.Validate()
 }
@@ -104,6 +111,9 @@ func (d Document) Validate() error {
 	}
 	if !(d.Reader.LineHeight >= 1.3 && d.Reader.LineHeight <= 2.4) {
 		return fmt.Errorf("reader.lineHeight 必須在 1.3–2.4")
+	}
+	if !(d.Reader.ParagraphGapLines >= 0 && d.Reader.ParagraphGapLines <= 3) {
+		return fmt.Errorf("reader.paragraphGapLines 必須在 0–3")
 	}
 	return nil
 }

@@ -8,7 +8,7 @@ apps/desktop/lib/
   features/reader/           閱讀協調、working copy、reading position
   features/reader/views/     文字／PDF／表格、編輯與歷史畫面
   features/reader/annotations/ 段落索引、小雲、筆記輸入與引用查看
-  features/evidence/         線索牆狀態、畫布、卡片與紅線
+  features/evidence/         線索牆狀態、主題與線索歸屬、挑選介面、畫布與紅線
   features/design/           外觀資料、已保存外觀、工作室與共享預覽
   features/history/          diff 請求與過期結果隔離
   ui/                        主題與共用介面
@@ -25,7 +25,9 @@ backend/
 
 Widget 不直接操作 library。ViewModel 依赖 repository 合約，Go 的儲存與 VAX 分開。
 working copy、reading position 與 evidence wall 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。
-線索牆不建立全部卡片 Widget，只建立可視區及緩衝區內的卡片；紅線集中繪製，背景點格只繪製視窗大小。段落索引依內容雜湊快取查找並在排版改變後量測位置。
+線索牆不建立全部卡片 Widget，只建立可視區及緩衝區內的卡片；紅線集中繪製，背景點格只繪製視窗大小。段落額外間距由外觀 JSON 控制；TXT／EPUB 在共用選取容器內保留實際分隔符並增加顯示 padding，尾端空行的版面高度獨立調整，避免雙算間距。TXT／EPUB 跨段複製由選取端點映射原文範圍，保留完整分隔字元。
+段落索引依內容雜湊快取查找並在排版改變後量測位置。
+線索主題的卡片及紅線按主題隔離；整份主題文件使用同一 CAS token 原子保存，避免索引與畫布多檔更新不一致。
 線索牆持久化檔案獨立於 VAX 節點，使用布局 token 與文件 head 防止覆蓋過期更新；見 [資料合約](EVIDENCE_WALL.md)。
 表格使用固定列高的 ListView.builder，只建立可見列；完整內容另開選取視窗。
 

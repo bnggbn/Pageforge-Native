@@ -95,6 +95,7 @@ class _TextDocumentViewState extends State<TextDocumentView> {
 
   @override
   Widget build(BuildContext context) => DocumentSelection(
+    plainText: widget.markdown ? null : widget.content,
     onQuote: widget.onQuote,
     scrollController: scroll,
     onCreateNote: widget.onCreateNote == null

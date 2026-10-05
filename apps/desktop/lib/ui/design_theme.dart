@@ -27,6 +27,8 @@ class DesignTheme extends ThemeExtension<DesignTheme> {
   }
 
   double get pageWidth => document.number('reader', 'pageWidth');
+  double get paragraphGapLines =>
+      document.number('reader', 'paragraphGapLines');
   double get lineHeight => document.number('reader', 'lineHeight');
   @override
   DesignTheme copyWith({DesignDocument? document}) =>
