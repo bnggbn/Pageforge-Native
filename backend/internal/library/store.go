@@ -84,7 +84,8 @@ func (s *Store) manifest(id string) (model.Manifest, error) {
 	if err = s.readJSON(file, &m); err != nil {
 		return m, err
 	}
-	if m.Document.ID != id || extensions[m.Document.Format] == "" ||
+	if (m.RevisionStorage != "" && m.RevisionStorage != objectRevisionFormat) ||
+		m.Document.ID != id || extensions[m.Document.Format] == "" ||
 		m.OriginalFile != "original."+extensions[m.Document.Format] || len(m.RevisionIDs) == 0 || len(m.RevisionIDs) > s.config.Limits.RevisionCount {
 		return m, fmt.Errorf("文件 manifest 無效")
 	}
@@ -100,6 +101,9 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	m, err := s.manifest(id)
 	if err != nil {
 		return b, err
+	}
+	if m.RevisionStorage == objectRevisionFormat {
+		return s.readObjectBook(m)
 	}
 	b.Document = m.Document
 	b.Revisions = []model.Revision{}

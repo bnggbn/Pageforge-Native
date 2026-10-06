@@ -61,7 +61,11 @@
   "storage": {
     "recordMiB": 64,
     "historyMiB": 256,
-    "verifiedCacheMiB": 64
+    "verifiedCacheMiB": 64,
+    "revisionFormat": "objects-v1",
+    "objectCount": 100000,
+    "inlineObjectBytes": 65536,
+    "objectCatalogMiB": 8
   },
   "transport": {
     "requestTimeoutMs": 30000,

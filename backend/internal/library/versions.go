@@ -79,11 +79,11 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 	if m.RevisionIDs[len(m.RevisionIDs)-1] != input.ExpectedHead {
 		return b, ErrConflict
 	}
-	version, err := s.safe("books", id, "versions", r.ID+".json")
+	versionFolder, err := s.safe("books", id)
 	if err != nil {
 		return b, err
 	}
-	if err = atomicJSON(version, r); err != nil {
+	if err = s.writeRevision(versionFolder, m.RevisionStorage, r); err != nil {
 		return b, err
 	}
 	m.RevisionIDs = append(m.RevisionIDs, r.ID)
@@ -93,6 +93,14 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 		m.ProgressEpoch = &r.ID
 		b.Progress = nil
 	}
+	var candidate *model.Book
+	if m.RevisionStorage == objectRevisionFormat {
+		validated, validateErr := s.readObjectBook(m)
+		if validateErr != nil {
+			return b, validateErr
+		}
+		candidate = &validated
+	}
 	manifest, err := s.safe("books", id, "manifest.json")
 	if err != nil {
 		return b, err
@@ -101,7 +109,11 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 		return b, err
 	}
 	b.Document = m.Document
-	b.Revisions = append(b.Revisions, r)
+	if candidate != nil {
+		b = *candidate
+	} else {
+		b.Revisions = append(b.Revisions, r)
+	}
 	return b, nil
 }
 func (s *Store) validateNotes(notes []model.Note) error {

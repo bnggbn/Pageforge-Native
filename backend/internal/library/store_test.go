@@ -17,6 +17,7 @@ func testStore(t *testing.T) *Store {
 	if err != nil {
 		t.Fatal(err)
 	}
+	c.Storage.RevisionFormat = "legacy"
 	c.Paths.LibraryRoot = t.TempDir()
 	s, err := Open(c)
 	if err != nil {

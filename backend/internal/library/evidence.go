@@ -73,16 +73,12 @@ func (s *Store) SaveEvidence(id string, input SaveEvidence) (model.EvidenceWall,
 		return input.Wall, ErrConflict
 	}
 	// Layout writes do not rehash the whole document chain or rewrite its versions.
-	file, err := s.safe("books", id, "versions", head+".json")
+	currentNotes, err := s.revisionNotes(manifest, head)
 	if err != nil {
 		return input.Wall, err
 	}
-	var revision model.Revision
-	if err = s.readJSON(file, &revision); err != nil {
-		return input.Wall, err
-	}
 	notes := map[string]bool{}
-	for _, note := range revision.Notes {
+	for _, note := range currentNotes {
 		notes[note.ID] = true
 	}
 	if err = s.validateEvidence(input.Wall, notes); err != nil {
@@ -91,7 +87,7 @@ func (s *Store) SaveEvidence(id string, input SaveEvidence) (model.EvidenceWall,
 	wall := migrateEvidence(input.Wall)
 	wall.Revision = vax.UUID()
 	wall.UpdatedAt = vax.Now()
-	file, err = s.safe("books", id, "evidence-wall.json")
+	file, err := s.safe("books", id, "evidence-wall.json")
 	if err != nil {
 		return wall, err
 	}

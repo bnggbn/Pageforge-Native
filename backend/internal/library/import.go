@@ -84,12 +84,24 @@ func (s *Store) importWithIndex(filename string, source []byte, index map[string
 	if err = writeSource(filepath.Join(pending, original), source); err != nil {
 		return "", false, err
 	}
-	if err = atomicJSON(filepath.Join(pending, "versions", revision.ID+".json"), revision); err != nil {
+	storageFormat := ""
+	if s.config.Storage.RevisionFormat == objectRevisionFormat {
+		storageFormat = objectRevisionFormat
+	}
+	if err = s.writeRevision(pending, storageFormat, revision); err != nil {
 		return "", false, err
 	}
-	manifest := model.Manifest{Document: doc, OriginalFile: original, OriginalType: "text/plain", RevisionIDs: []string{revision.ID}}
+	manifest := model.Manifest{
+		RevisionStorage: storageFormat, Document: doc,
+		OriginalFile: original, OriginalType: "text/plain", RevisionIDs: []string{revision.ID},
+	}
 	if err = atomicJSON(filepath.Join(pending, "manifest.json"), manifest); err != nil {
 		return "", false, err
+	}
+	if storageFormat == objectRevisionFormat {
+		if _, err = s.readObjectBookAt(manifest, pending, false); err != nil {
+			return "", false, err
+		}
 	}
 	if err = os.Rename(pending, filepath.Join(booksDir, id)); err != nil {
 		return "", false, err

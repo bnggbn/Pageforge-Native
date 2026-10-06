@@ -17,6 +17,7 @@ func BenchmarkWarmLoadHistory(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
+			c.Storage.RevisionFormat = "legacy"
 			c.Paths.LibraryRoot = b.TempDir()
 			s, err := Open(c)
 			if err != nil {

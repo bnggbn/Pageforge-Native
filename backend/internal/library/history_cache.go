@@ -9,13 +9,17 @@ import (
 	"io"
 	"os"
 
+	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 )
 
 // One bounded, immutable verified history. File contents, not timestamps, define identity.
 type verifiedBook struct {
-	key  string
-	book model.Book
+	objectMetaKey string
+	objectFiles   []content.StoredFile
+	retainedBytes int64
+	key           string
+	book          model.Book
 }
 
 func (s *Store) historyFingerprint(m model.Manifest, original string) (string, int64, error) {
@@ -103,9 +107,10 @@ func cloneBook(b model.Book) model.Book {
 
 func historyDigest(m model.Manifest) (hash.Hash, error) {
 	encoded, err := json.Marshal(struct {
+		Storage  string
 		Document model.Document
 		IDs      []string
-	}{m.Document, m.RevisionIDs})
+	}{m.RevisionStorage, m.Document, m.RevisionIDs})
 	if err != nil {
 		return nil, err
 	}

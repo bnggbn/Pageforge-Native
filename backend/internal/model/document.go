@@ -57,12 +57,13 @@ type Position struct {
 	Epoch      *string `json:"epoch,omitempty"`
 }
 type Manifest struct {
-	Document      Document  `json:"document"`
-	OriginalFile  string    `json:"originalFile"`
-	OriginalType  string    `json:"originalType"`
-	RevisionIDs   []string  `json:"revisionIds"`
-	Progress      *Position `json:"progress,omitempty"`
-	ProgressEpoch *string   `json:"progressEpoch,omitempty"`
+	RevisionStorage string    `json:"revisionStorage,omitempty"`
+	Document        Document  `json:"document"`
+	OriginalFile    string    `json:"originalFile"`
+	OriginalType    string    `json:"originalType"`
+	RevisionIDs     []string  `json:"revisionIds"`
+	Progress        *Position `json:"progress,omitempty"`
+	ProgressEpoch   *string   `json:"progressEpoch,omitempty"`
 }
 type Book struct {
 	Document

@@ -92,6 +92,8 @@ func Verify(doc model.Document, source []byte, revisions []model.Revision) error
 	previous := doc.Genesis
 	var parent *string
 	ids := map[string]bool{}
+	// Exact immutable text values may be shared by many note-only revisions.
+	contentHashes := map[string]string{}
 	for index, r := range revisions {
 		allowed := r.Kind == "edit" || r.Kind == "note" || r.Kind == "restore" || r.Kind == "adopt"
 		if (index == 0 && r.Kind != "import") || (index > 0 && !allowed) || r.BranchID != "" || ids[r.ID] ||
@@ -124,8 +126,13 @@ func Verify(doc model.Document, source []byte, revisions []model.Revision) error
 		if err != nil {
 			return err
 		}
+		contentHash, found := contentHashes[r.Content]
+		if !found {
+			contentHash = Hash([]byte(r.Content))
+			contentHashes[r.Content] = contentHash
+		}
 		expected := map[string]any{"documentId": doc.ID, "revisionId": r.ID, "parentId": r.ParentID,
-			"originalHash": doc.OriginalHash, "contentHash": Hash([]byte(r.Content)), "notesHash": Hash([]byte(notes)), "viewHash": view}
+			"originalHash": doc.OriginalHash, "contentHash": contentHash, "notesHash": Hash([]byte(notes)), "viewHash": view}
 		for key, value := range expected {
 			a, _ := Canonical(data[key])
 			b, _ := Canonical(value)

@@ -13,9 +13,13 @@ type Config struct {
 		ResponseMiB      int `json:"responseMiB"`
 	} `json:"transport"`
 	Storage struct {
-		RecordMiB        int `json:"recordMiB"`
-		HistoryMiB       int `json:"historyMiB"`
-		VerifiedCacheMiB int `json:"verifiedCacheMiB"`
+		InlineObjectBytes int    `json:"inlineObjectBytes"`
+		ObjectCatalogMiB  int    `json:"objectCatalogMiB"`
+		RevisionFormat    string `json:"revisionFormat"`
+		ObjectCount       int    `json:"objectCount"`
+		RecordMiB         int    `json:"recordMiB"`
+		HistoryMiB        int    `json:"historyMiB"`
+		VerifiedCacheMiB  int    `json:"verifiedCacheMiB"`
 	} `json:"storage"`
 	EvidenceWall struct {
 		MaxTopics           int `json:"maxTopics"`
@@ -57,6 +61,10 @@ func Load(root string) (Config, error) {
 	var c Config
 	c.Transport.RequestTimeoutMs = 30000
 	c.Transport.ResponseMiB = 64
+	c.Storage.InlineObjectBytes = 65536
+	c.Storage.ObjectCatalogMiB = 8
+	c.Storage.RevisionFormat = "objects-v1"
+	c.Storage.ObjectCount = 100000
 	c.Storage.RecordMiB = 64
 	c.Storage.HistoryMiB = 256
 	c.Storage.VerifiedCacheMiB = 64
@@ -113,6 +121,12 @@ func Load(root string) (Config, error) {
 	if c.Transport.RequestTimeoutMs < 1000 || c.Transport.RequestTimeoutMs > 120000 ||
 		c.Transport.ResponseMiB < 1 || c.Transport.ResponseMiB > 512 {
 		return c, fmt.Errorf("HTTP 讀取設定無效")
+	}
+	if (c.Storage.RevisionFormat != "legacy" && c.Storage.RevisionFormat != "objects-v1") ||
+		c.Storage.ObjectCount < 1 || c.Storage.ObjectCount > 1000000 ||
+		c.Storage.InlineObjectBytes < 0 || c.Storage.InlineObjectBytes > 65536 ||
+		c.Storage.ObjectCatalogMiB < 1 || c.Storage.ObjectCatalogMiB > 32 {
+		return c, fmt.Errorf("內容物件設定無效")
 	}
 	if c.Storage.RecordMiB < 1 || c.Storage.RecordMiB > 512 ||
 		c.Storage.HistoryMiB < c.Storage.RecordMiB || c.Storage.HistoryMiB > 4096 ||

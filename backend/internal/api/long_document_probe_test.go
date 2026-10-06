@@ -91,6 +91,7 @@ func probeDocument(t *testing.T, characters, revisions int) {
 
 	// Experiment-only overrides. No product configuration or user library is changed.
 	c := defaults
+	c.Storage.RevisionFormat = "legacy"
 	c.Paths.LibraryRoot = t.TempDir()
 	c.Limits.TextMiB, c.Limits.DocumentMiB, c.Limits.RequestMiB = 32, 32, 64
 	c.Storage.HistoryMiB = 512
