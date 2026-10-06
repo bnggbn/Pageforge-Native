@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'bounded_response.dart';
 import 'models.dart';
 
 class ApiException implements Exception {
@@ -22,6 +24,7 @@ abstract class LibraryRepository {
   );
   Future<List<BookSummary>> list();
   Future<Book> load(String id);
+  Future<Revision> revision(String id, String revisionId);
   Future<String> import(String path);
   Future<void> syncCollection();
   Future<Book> commit(
@@ -39,11 +42,18 @@ abstract class LibraryRepository {
 }
 
 class HttpLibraryRepository implements LibraryRepository {
-  HttpLibraryRepository(this.origin, this.token, {http.Client? client})
-    : client = client ?? http.Client();
+  HttpLibraryRepository(
+    this.origin,
+    this.token, {
+    http.Client? client,
+    this.timeout = const Duration(seconds: 30),
+    this.maxResponseBytes = 64 * 1024 * 1024,
+  }) : client = client ?? http.Client();
   final Uri origin;
   final String token;
   final http.Client client;
+  Duration timeout;
+  int maxResponseBytes;
 
   Future<dynamic> _request(
     String method,
@@ -51,17 +61,34 @@ class HttpLibraryRepository implements LibraryRepository {
     Object? body,
     Map<String, String>? extra,
   ]) async {
-    final request = http.Request(method, origin.resolve('/v1/$path'));
+    final abort = Completer<void>();
+    final request = http.AbortableRequest(
+      method,
+      origin.resolve('/v1/$path'),
+      abortTrigger: abort.future,
+    );
     request.headers.addAll({
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
       ...?extra,
     });
     if (body != null) request.body = jsonEncode(body);
-    final response = await http.Response.fromStream(
-      await client.send(request).timeout(const Duration(seconds: 30)),
+    final response = await boundedResponse(
+      client,
+      request,
+      abort,
+      timeout: timeout,
+      maxBytes: maxResponseBytes,
     );
-    final value = jsonDecode(response.body);
+    dynamic value;
+    try {
+      value = jsonDecode(response.body);
+    } on FormatException {
+      if (response.statusCode >= 400) {
+        throw ApiException('後端請求失敗', response.statusCode);
+      }
+      rethrow;
+    }
     if (response.statusCode >= 400) {
       throw ApiException(
         value is Map ? '${value['error']}' : '後端請求失敗',
@@ -72,8 +99,16 @@ class HttpLibraryRepository implements LibraryRepository {
   }
 
   @override
-  Future<Json> settings() async =>
-      (await _request('GET', 'status') as Json)['config'] as Json;
+  Future<Json> settings() async {
+    final config = (await _request('GET', 'status') as Json)['config'] as Json;
+    final transport = config['transport'] as Json?;
+    if (transport != null) {
+      timeout = Duration(milliseconds: transport['requestTimeoutMs'] as int);
+      maxResponseBytes = (transport['responseMiB'] as int) * 1024 * 1024;
+    }
+    return config;
+  }
+
   @override
   Future<List<BookSummary>> list() async =>
       (await _request('GET', 'books') as List)
@@ -81,7 +116,10 @@ class HttpLibraryRepository implements LibraryRepository {
           .toList();
   @override
   Future<Book> load(String id) async =>
-      Book(await _request('GET', 'books/$id') as Json);
+      Book(await _request('GET', 'books/$id?view=reader') as Json);
+  @override
+  Future<Revision> revision(String id, String revisionId) async =>
+      Revision(await _request('GET', 'books/$id/versions/$revisionId') as Json);
   @override
   Future<String> import(String path) async {
     final file = File(path);
@@ -113,7 +151,7 @@ class HttpLibraryRepository implements LibraryRepository {
     List<Json> notes, {
     String? restoredFrom,
   }) async => Book(
-    await _request('POST', 'books/${book.id}/versions', {
+    await _request('POST', 'books/${book.id}/versions?view=reader', {
           'expectedHead': book.head.id,
           'kind': kind,
           'content': content,

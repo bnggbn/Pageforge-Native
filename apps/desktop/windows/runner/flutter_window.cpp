@@ -3,6 +3,8 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include <flutter/standard_method_codec.h>
+#include <flutter/method_result_functions.h>
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -25,6 +27,9 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  close_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "pageforge/window",
+      &flutter::StandardMethodCodec::GetInstance());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -40,6 +45,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  close_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -51,6 +57,36 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  // Defer native destruction until Dart has saved or the user has cancelled.
+  if (message == WM_CLOSE && close_channel_ && !close_allowed_) {
+    if (!close_pending_) {
+      close_pending_ = true;
+      auto approve = [this, hwnd]() {
+        close_pending_ = false;
+        close_allowed_ = true;
+        // Destroy on the next event, after the channel's reply callback returns.
+        PostMessage(hwnd, WM_CLOSE, 0, 0);
+      };
+      close_channel_->InvokeMethod(
+          "requestClose", nullptr,
+          std::make_unique<
+              flutter::MethodResultFunctions<flutter::EncodableValue>>(
+              [this, approve](const flutter::EncodableValue* value) {
+                const bool* allowed = value ? std::get_if<bool>(value) : nullptr;
+                if (allowed && *allowed) {
+                  approve();
+                } else {
+                  close_pending_ = false;
+                }
+              },
+              [this](const std::string&, const std::string&,
+                     const flutter::EncodableValue*) {
+                close_pending_ = false;
+              },
+              approve));  // No editing is possible before Dart installs its handler.
+    }
+    return 0;
+  }
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
     std::optional<LRESULT> result =

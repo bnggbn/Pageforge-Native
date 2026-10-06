@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../platform/close_boundary.dart';
 import 'design_controller.dart';
 import 'studio_inspector.dart';
 import 'studio_json_editor.dart';
@@ -50,111 +51,121 @@ class _StudioScreenState extends State<StudioScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: model,
-    builder: (context, _) => PopScope(
-      canPop: leaving,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) back();
-      },
-      child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              StudioToolbar(model: model, onBack: back),
-              if (model.error.isNotEmpty || model.message.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 8,
+  Widget build(BuildContext context) => CloseParticipant(
+    task: CloseTask(
+      dirty: () => model.dirty,
+      busy: () => model.busy,
+      save: () async => !model.dirty || await model.apply(),
+      discard: () async => true,
+      error: () => model.error,
+      description: '外觀工作室尚未套用的調整：保存會套用外觀；捨棄會保留原先外觀。',
+    ),
+    child: ListenableBuilder(
+      listenable: model,
+      builder: (context, _) => PopScope(
+        canPop: leaving,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) back();
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                StudioToolbar(model: model, onBack: back),
+                if (model.error.isNotEmpty || model.message.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                    child: SelectableText(
+                      model.error.isNotEmpty ? model.error : model.message,
+                    ),
                   ),
-                  child: SelectableText(
-                    model.error.isNotEmpty ? model.error : model.message,
-                  ),
-                ),
-              const Divider(height: 1),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, bounds) {
-                    final scenes = StudioSceneList(
-                      model: model,
-                      compact: bounds.maxWidth < 1100,
-                    );
-                    final inspector = Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(value: false, label: Text('屬性')),
-                              ButtonSegment(value: true, label: Text('JSON')),
-                            ],
-                            selected: {json},
-                            onSelectionChanged: (value) =>
-                                setState(() => json = value.first),
-                          ),
-                        ),
-                        Expanded(
-                          child: IgnorePointer(
-                            ignoring: model.busy,
-                            child: json
-                                ? StudioJsonEditor(
-                                    source: model.source,
-                                    onChanged: model.editJson,
-                                  )
-                                : StudioInspector(model: model),
-                          ),
-                        ),
-                      ],
-                    );
-                    final preview = StudioPreview(
-                      document: model.document,
-                      scene: model.scene,
-                    );
-                    if (bounds.maxWidth < 720) {
-                      return Column(
+                const Divider(height: 1),
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, bounds) {
+                      final scenes = StudioSceneList(
+                        model: model,
+                        compact: bounds.maxWidth < 1100,
+                      );
+                      final inspector = Column(
                         children: [
-                          scenes,
-                          Expanded(
-                            child: ListView(
-                              children: [
-                                SizedBox(height: 520, child: preview),
-                                SizedBox(height: 480, child: inspector),
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: SegmentedButton<bool>(
+                              segments: const [
+                                ButtonSegment(value: false, label: Text('屬性')),
+                                ButtonSegment(value: true, label: Text('JSON')),
                               ],
+                              selected: {json},
+                              onSelectionChanged: (value) =>
+                                  setState(() => json = value.first),
+                            ),
+                          ),
+                          Expanded(
+                            child: IgnorePointer(
+                              ignoring: model.busy,
+                              child: json
+                                  ? StudioJsonEditor(
+                                      source: model.source,
+                                      onChanged: model.editJson,
+                                    )
+                                  : StudioInspector(model: model),
                             ),
                           ),
                         ],
                       );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (bounds.maxWidth >= 1100)
-                          SizedBox(width: 165, child: scenes),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              if (bounds.maxWidth < 1100) scenes,
-                              Expanded(child: preview),
-                            ],
+                      final preview = StudioPreview(
+                        document: model.document,
+                        scene: model.scene,
+                      );
+                      if (bounds.maxWidth < 720) {
+                        return Column(
+                          children: [
+                            scenes,
+                            Expanded(
+                              child: ListView(
+                                children: [
+                                  SizedBox(height: 520, child: preview),
+                                  SizedBox(height: 480, child: inspector),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (bounds.maxWidth >= 1100)
+                            SizedBox(width: 165, child: scenes),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                if (bounds.maxWidth < 1100) scenes,
+                                Expanded(child: preview),
+                              ],
+                            ),
                           ),
-                        ),
-                        const VerticalDivider(width: 1),
-                        SizedBox(width: 300, child: inspector),
-                      ],
-                    );
-                  },
+                          const VerticalDivider(width: 1),
+                          SizedBox(width: 300, child: inspector),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
-              const Divider(height: 1),
-              const Padding(
-                padding: EdgeInsets.all(8),
-                child: Text(
-                  '即時預覽 · 套用後才改變你的 Pageforge',
-                  style: TextStyle(fontSize: 11),
+                const Divider(height: 1),
+                const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Text(
+                    '即時預覽 · 套用後才改變你的 Pageforge',
+                    style: TextStyle(fontSize: 11),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

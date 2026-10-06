@@ -10,13 +10,17 @@ class EvidenceConnections extends CustomPainter {
     required this.color,
     required this.drag,
     this.source,
-    this.pointer,
-  }) : super(repaint: drag);
+    required this.pointer,
+    required this.labels,
+    required this.visible,
+  }) : super(repaint: Listenable.merge([drag, pointer]));
   final EvidenceCardDrag drag;
   final List<Json> cards, edges;
   final Color color;
   final String? source;
-  final Offset? pointer;
+  final ValueNotifier<Offset?> pointer;
+  final EvidenceLabels labels;
+  final Rect visible;
   @override
   void paint(Canvas canvas, Size size) {
     final pins = {
@@ -30,30 +34,21 @@ class EvidenceConnections extends CustomPainter {
     for (final edge in edges) {
       final a = pins[edge['from']], b = pins[edge['to']];
       if (a == null || b == null) continue;
-      canvas.drawPath(evidencePath(a, b), paint);
+      final path = evidencePath(a, b);
+      // Conservative path bounds also keep lines crossing the viewport with both pins offscreen.
+      if (!path.getBounds().inflate(170).overlaps(visible)) continue;
+      canvas.drawPath(path, paint);
       final label = edge['label'] as String;
       if (label.isNotEmpty) {
-        final text = TextPainter(
-          text: TextSpan(
-            text: label,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              backgroundColor: const Color(0xfff5f2e9),
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-          ellipsis: '…',
-        )..layout(maxWidth: 160);
+        final text = labels.get(label, color);
         final center = curvePoint(a, b, .5);
         text.paint(canvas, center - Offset(text.width / 2, text.height / 2));
       }
     }
     final pin = pins[source];
-    if (pin != null && pointer != null) {
+    if (pin != null && pointer.value != null) {
       canvas.drawPath(
-        evidencePath(pin, pointer!),
+        evidencePath(pin, pointer.value!),
         paint..color = color.withValues(alpha: .6),
       );
     }
@@ -66,7 +61,51 @@ class EvidenceConnections extends CustomPainter {
       !identical(edges, old.edges) ||
       source != old.source ||
       pointer != old.pointer ||
+      visible != old.visible ||
+      labels != old.labels ||
       color != old.color;
+}
+
+/// Owned by the canvas; labels are laid out once and disposed when removed.
+class EvidenceLabels {
+  final _texts = <String, TextPainter>{};
+  List<Json>? _edges;
+  Color? _color;
+  int layouts = 0;
+  TextPainter get(String label, Color color) => _texts.putIfAbsent(label, () {
+    layouts++;
+    return TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          backgroundColor: const Color(0xfff5f2e9),
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 160);
+  });
+  void sync(List<Json> edges, Color color) {
+    if (identical(edges, _edges) && color == _color) return;
+    final labels = edges.map((edge) => edge['label'] as String).toSet();
+    for (final key in _texts.keys.toList()) {
+      if (color != _color || !labels.contains(key)) {
+        _texts.remove(key)!.dispose();
+      }
+    }
+    _edges = edges;
+    _color = color;
+  }
+
+  void dispose() {
+    for (final text in _texts.values) {
+      text.dispose();
+    }
+    _texts.clear();
+  }
 }
 
 class EvidenceGrid extends CustomPainter {

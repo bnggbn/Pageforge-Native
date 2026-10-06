@@ -17,6 +17,7 @@ class LibraryViewModel extends ChangeNotifier {
       .toList();
 
   Future<void> load() => _act(() async {
+    await repository.settings();
     books = await repository.list();
   });
   Future<void> sync() => _act(() async {

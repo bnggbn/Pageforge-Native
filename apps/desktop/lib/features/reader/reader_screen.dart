@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/library_repository.dart';
+import '../../platform/close_boundary.dart';
 import '../../ui/design_theme.dart';
 import 'reader_view_model.dart';
 import 'views/reader_pane.dart';
@@ -44,76 +45,86 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: leaving,
-    onPopInvokedWithResult: (didPop, result) {
-      if (!didPop) back();
-    },
-    child: Scaffold(
-      body: SafeArea(
-        child: ListenableBuilder(
-          listenable: model,
-          builder: (context, _) {
-            final book = model.book;
-            return Padding(
-              padding: EdgeInsets.fromLTRB(32, 20, 32, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: model.busy ? null : back,
-                        icon: Icon(Icons.arrow_back),
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          book?.title ?? '正在驗證版本…',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.headlineSmall,
+  Widget build(BuildContext context) => CloseParticipant(
+    task: CloseTask(
+      dirty: () => model.hasUnsavedChanges,
+      busy: () => model.busy,
+      save: model.flush,
+      discard: model.discardDraftForClose,
+      error: () => model.error,
+      description: '文字與筆記會保存為草稿供下次續寫；正式版本請用「保存為新版本」。捨棄只移除目前草稿，線索牆與閱讀位置仍會保存。',
+    ),
+    child: PopScope(
+      canPop: leaving,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) back();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: ListenableBuilder(
+            listenable: model,
+            builder: (context, _) {
+              final book = model.book;
+              return Padding(
+                padding: EdgeInsets.fromLTRB(32, 20, 32, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: model.busy ? null : back,
+                          icon: Icon(Icons.arrow_back),
                         ),
-                      ),
-                      if (book != null)
-                        Text(
-                          '${book.revisions.length} 個版本',
-                          style: TextStyle(
-                            color: context.design.muted,
-                            fontSize: 12,
+                        SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            book?.title ?? '正在驗證版本…',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
                         ),
+                        if (book != null)
+                          Text(
+                            '${book.revisionCount} 個版本',
+                            style: TextStyle(
+                              color: context.design.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                    Divider(),
+                    if (book != null && model.working != null) ...[
+                      ReaderToolbar(model: model),
+                      WorkingCopyBar(copy: model.working!),
                     ],
-                  ),
-                  Divider(),
-                  if (book != null && model.working != null) ...[
-                    ReaderToolbar(model: model),
-                    WorkingCopyBar(copy: model.working!),
+                    if (model.error.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: SelectableText(
+                          model.error,
+                          style: TextStyle(color: context.design.rust),
+                        ),
+                      ),
+                    if (model.message.isNotEmpty)
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          model.message,
+                          style: TextStyle(color: context.design.forest),
+                        ),
+                      ),
+                    if (model.busy) LinearProgressIndicator(),
+                    SizedBox(height: 12),
+                    if (book != null && model.working != null)
+                      Expanded(child: ReaderPane(model: model)),
                   ],
-                  if (model.error.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: SelectableText(
-                        model.error,
-                        style: TextStyle(color: context.design.rust),
-                      ),
-                    ),
-                  if (model.message.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        model.message,
-                        style: TextStyle(color: context.design.forest),
-                      ),
-                    ),
-                  if (model.busy) LinearProgressIndicator(),
-                  SizedBox(height: 12),
-                  if (book != null && model.working != null)
-                    Expanded(child: ReaderPane(model: model)),
-                ],
-              ),
-            );
-          },
+                ),
+              );
+            },
+          ),
         ),
       ),
     ),

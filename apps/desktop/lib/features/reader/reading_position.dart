@@ -18,6 +18,7 @@ class ReadingPosition {
   Json? _pending;
   Timer? _timer;
   Future<void> _queue = Future.value();
+  bool get pending => _pending != null;
   void remember(double offset, double extent) {
     ratio = extent <= 0 ? 0 : (offset / extent).clamp(0, 1);
     final count = _book.format == 'epub'

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'data/library_repository.dart';
 import 'features/library/library_screen.dart';
 import 'platform/backend_process.dart';
+import 'platform/close_boundary.dart';
 import 'ui/theme.dart';
 import 'features/design/design_controller.dart';
 import 'features/design/design_repository.dart';
@@ -69,47 +70,53 @@ class _PageforgeBootstrapState extends State<PageforgeBootstrap> {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: designController ?? const AlwaysStoppedAnimation<double>(0),
-    builder: (context, _) => MaterialApp(
-      title: 'Pageforge',
-      debugShowCheckedModeBanner: false,
-      theme: pageforgeTheme(designController?.document),
-      home: repository != null
-          ? LibraryScreen(
-              repository: repository!,
-              designController: designController,
-            )
-          : Scaffold(
-              body: Center(
-                child: SizedBox(
-                  width: 480,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Pageforge.',
-                        style: Theme.of(context).textTheme.displaySmall,
-                      ),
-                      const SizedBox(height: 24),
-                      if (error.isEmpty)
-                        const CircularProgressIndicator()
-                      else ...[
-                        SelectableText(
-                          error,
-                          style: const TextStyle(color: rust),
+  Widget build(BuildContext context) => CloseBoundary(
+    beforeClose: () async {
+      await backend?.close();
+    },
+    builder: (context, navigator) => ListenableBuilder(
+      listenable: designController ?? const AlwaysStoppedAnimation<double>(0),
+      builder: (context, _) => MaterialApp(
+        navigatorKey: navigator,
+        title: 'Pageforge',
+        debugShowCheckedModeBanner: false,
+        theme: pageforgeTheme(designController?.document),
+        home: repository != null
+            ? LibraryScreen(
+                repository: repository!,
+                designController: designController,
+              )
+            : Scaffold(
+                body: Center(
+                  child: SizedBox(
+                    width: 480,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Pageforge.',
+                          style: Theme.of(context).textTheme.displaySmall,
                         ),
-                        const SizedBox(height: 20),
-                        FilledButton(
-                          onPressed: start,
-                          child: const Text('重新啟動'),
-                        ),
+                        const SizedBox(height: 24),
+                        if (error.isEmpty)
+                          const CircularProgressIndicator()
+                        else ...[
+                          SelectableText(
+                            error,
+                            style: const TextStyle(color: rust),
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                            onPressed: start,
+                            child: const Text('重新啟動'),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
+      ),
     ),
   );
 }

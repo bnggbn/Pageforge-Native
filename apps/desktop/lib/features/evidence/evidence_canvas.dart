@@ -3,6 +3,7 @@ import '../../data/models.dart';
 import '../../ui/design_theme.dart';
 import 'evidence_card.dart';
 import 'evidence_card_drag.dart';
+import 'evidence_positioned_card.dart';
 import 'evidence_connections.dart';
 import 'evidence_edge_dialog.dart';
 import 'evidence_geometry.dart';
@@ -24,7 +25,8 @@ class EvidenceCanvas extends StatefulWidget {
 class _EvidenceCanvasState extends State<EvidenceCanvas> {
   final transform = TransformationController(), viewport = GlobalKey();
   final drag = EvidenceCardDrag();
-  Offset? pointer;
+  final pointer = ValueNotifier<Offset?>(null);
+  final labels = EvidenceLabels();
   int focusRequest = -1;
   @override
   void initState() {
@@ -41,6 +43,8 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
     transform.removeListener(redraw);
     transform.dispose();
     drag.dispose();
+    pointer.dispose();
+    labels.dispose();
     super.dispose();
   }
 
@@ -57,8 +61,8 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
   }
 
   void finishLink() {
-    final point = pointer;
-    pointer = null;
+    final point = pointer.value;
+    pointer.value = null;
     if (point == null) {
       widget.model.cancelLink();
       return;
@@ -109,6 +113,7 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
         transform.toScene(Offset.zero),
         transform.toScene(Offset(bounds.maxWidth, bounds.maxHeight)),
       ).inflate(280);
+      labels.sync(model.edges, const Color(0xffa83b35));
       final cards = model.cards,
           indices = {
             for (var i = 0; i < cards.length; i++) cards[i]['noteId']: i + 1,
@@ -148,6 +153,8 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
                                 color: const Color(0xffa83b35),
                                 source: model.linkSource,
                                 pointer: pointer,
+                                labels: labels,
+                                visible: visible,
                               ),
                             ),
                           ),
@@ -155,18 +162,12 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
                       ),
                       for (final card in cards)
                         if (evidenceCardRect(card).overlaps(visible))
-                          AnimatedBuilder(
-                            animation: drag,
-                            builder: (_, child) {
-                              final point = drag.positionOf(card);
-                              return Positioned(
-                                left: point.dx,
-                                top: point.dy,
-                                width: 280,
-                                height: 240,
-                                child: child!,
-                              );
-                            },
+                          EvidencePositionedCard(
+                            key: ValueKey(
+                              'evidence-position-${card['noteId']}',
+                            ),
+                            drag: drag,
+                            card: card,
                             child: RepaintBoundary(
                               child: EvidenceCard(
                                 key: ValueKey(
@@ -197,9 +198,8 @@ class _EvidenceCanvasState extends State<EvidenceCanvas> {
                                     : model.connect(card['noteId'] as String),
                                 onPinStart: () =>
                                     model.beginLink(card['noteId'] as String),
-                                onPinUpdate: (global) => setState(
-                                  () => pointer = scenePoint(global),
-                                ),
+                                onPinUpdate: (global) =>
+                                    pointer.value = scenePoint(global),
                                 onPinEnd: finishLink,
                               ),
                             ),

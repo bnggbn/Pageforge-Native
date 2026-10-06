@@ -19,7 +19,7 @@ class _HistoryViewState extends State<HistoryView> {
     super.initState();
     final book = widget.model.book!;
     diff = DiffViewModel(widget.model.repository, book);
-    from = book.revisions.length > 1
+    from = book.history.length > 1
         ? book.revisions[book.revisions.length - 2].id
         : book.head.id;
     to = book.head.id;
@@ -32,7 +32,7 @@ class _HistoryViewState extends State<HistoryView> {
     super.dispose();
   }
 
-  Future<void> restore(Revision revision) async {
+  Future<void> restore(RevisionSummary revision) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -57,7 +57,7 @@ class _HistoryViewState extends State<HistoryView> {
       DropdownButton<String>(
         value: value,
         items: [
-          for (var i = 0; i < widget.model.book!.revisions.length; i++)
+          for (var i = 0; i < widget.model.book!.history.length; i++)
             DropdownMenuItem(
               value: widget.model.book!.revisions[i].id,
               child: Text(

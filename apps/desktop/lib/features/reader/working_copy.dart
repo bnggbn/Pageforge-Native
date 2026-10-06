@@ -14,13 +14,16 @@ class WorkingCopy extends ChangeNotifier {
   Json _values = {}, _saved = {};
   Future<void> _queue = Future.value();
   Timer? _timer;
-  bool _disposed = false;
+  bool _disposed = false, _discarding = false;
   String status = 'saved', error = '';
   String get content => _values['content'] as String? ?? '';
   String get body => _values['body'] as String? ?? '';
   String get quote => _values['quote'] as String? ?? '';
   String get location => _values['location'] as String? ?? '全文筆記';
   bool get dirty => content != _book.head.content;
+  bool get hasDraft =>
+      dirty || body.isNotEmpty || quote.isNotEmpty || location != '全文筆記';
+  bool get pending => !identical(_values, _saved);
 
   Future<void> open(Book book) async {
     _book = book;
@@ -28,7 +31,7 @@ class WorkingCopy extends ChangeNotifier {
     final copy = copies.isEmpty ? null : copies.first;
     final base = copy == null
         ? book.head
-        : book.revisions.firstWhere((r) => r.id == copy['baseRevisionId']);
+        : await repository.revision(book.id, copy['baseRevisionId'] as String);
     _base = base.id;
     _baseline = base.content;
     _id = copy?['id'] as String? ?? newId();
@@ -44,6 +47,7 @@ class WorkingCopy extends ChangeNotifier {
   }
 
   void change(Json patch) {
+    if (_discarding) return;
     if (patch.entries.every((e) => _values[e.key] == e.value)) return;
     _values = {..._values, ...patch};
     status = 'pending';
@@ -56,6 +60,7 @@ class WorkingCopy extends ChangeNotifier {
   }
 
   Future<void> flush() async {
+    if (_discarding) return;
     _timer?.cancel();
     final values = _values;
     final operation = _queue.catchError((Object e) {}).then((_) async {
@@ -113,7 +118,38 @@ class WorkingCopy extends ChangeNotifier {
     });
     _queue = operation;
     await operation;
-    if (!identical(values, _values)) await flush();
+    if (!_discarding && !identical(values, _values)) await flush();
+  }
+
+  /// Deletes only this working copy using its last CAS token. Committed versions remain.
+  Future<void> discard() async {
+    _discarding = true;
+    _timer?.cancel();
+    try {
+      await _queue.catchError((Object _) {});
+      if (_version != null) {
+        await repository.removeDraft({
+          'id': _id,
+          'documentId': _book.id,
+          'version': _version,
+        });
+      }
+      _version = null;
+      _base = _book.head.id;
+      _baseline = _book.head.content;
+      _values = {
+        'content': _baseline,
+        'body': '',
+        'quote': '',
+        'location': '全文筆記',
+      };
+      _saved = _values;
+      status = 'saved';
+      error = '';
+      _notify();
+    } finally {
+      _discarding = false;
+    }
   }
 
   Future<void> rebase(

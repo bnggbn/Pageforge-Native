@@ -91,6 +91,25 @@ class ReaderViewModel extends ChangeNotifier {
       tab = ReaderTab.read;
     }
   });
+  bool get hasUnsavedChanges =>
+      (working?.hasDraft ?? false) ||
+      (working?.pending ?? false) ||
+      (wall?.dirty ?? false) ||
+      (position?.pending ?? false);
+
+  Future<bool> discardDraftForClose() async {
+    try {
+      await wall?.flush();
+      await position?.flush();
+      await working?.discard();
+      return true;
+    } catch (e) {
+      error = '$e';
+      _notify();
+      return false;
+    }
+  }
+
   Future<bool> flush() async {
     try {
       await working?.flush();
@@ -184,10 +203,10 @@ class ReaderViewModel extends ChangeNotifier {
     book!.head.content,
     book!.head.notes.where((n) => n['id'] != id).toList(),
   );
-  Future<void> restore(Revision revision) => _commit(
+  Future<void> restore(RevisionSummary revision) => _commit(
     'restore',
-    revision.content,
-    revision.notes,
+    book!.head.content,
+    book!.head.notes,
     restoredFrom: revision.id,
     clearContent: !working!.dirty,
   );
@@ -218,7 +237,7 @@ class ReaderViewModel extends ChangeNotifier {
     book = updated;
     wall?.updateBook(updated);
     // The version already exists even if subsequent draft housekeeping fails.
-    message = '已保存第 ${updated.revisions.length} 版。';
+    message = '已保存第 ${updated.revisionCount} 版。';
     await working!.rebase(
       updated,
       clearContent: clearContent,

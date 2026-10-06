@@ -69,6 +69,9 @@ class FakeRepository implements LibraryRepository {
   @override
   Future<Book> load(String id) async => Book(data);
   @override
+  Future<Revision> revision(String id, String revisionId) async =>
+      Book(data).revisions.firstWhere((r) => r.id == revisionId);
+  @override
   Future<String> import(String path) async => data['id'] as String;
   @override
   Future<void> syncCollection() async {}
@@ -81,12 +84,16 @@ class FakeRepository implements LibraryRepository {
     String? restoredFrom,
   }) async {
     final revisions = (data['revisions'] as List).cast<Json>();
+    final restore = kind == 'restore'
+        ? revisions.firstWhere((r) => r['id'] == restoredFrom)
+        : null;
     final value = {
       'id': 'head-${revisions.length + 1}',
       'kind': kind,
-      'content': kind == 'note' ? book.head.content : content,
+      'content':
+          restore?['content'] ?? (kind == 'note' ? book.head.content : content),
       'createdAt': '2026-10-05T00:00:00Z',
-      'notes': notes,
+      'notes': restore?['notes'] ?? notes,
     };
     data = {
       ...data,

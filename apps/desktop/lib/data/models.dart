@@ -18,15 +18,20 @@ class BookSummary {
       : format.toUpperCase();
 }
 
-class Revision {
-  Revision(Json json)
+class RevisionSummary {
+  RevisionSummary(Json json)
     : id = json['id'] as String,
       kind = json['kind'] as String,
-      content = json['content'] as String,
-      createdAt = DateTime.parse(json['createdAt'] as String),
-      notes = List<Json>.unmodifiable((json['notes'] as List).cast<Json>());
-  final String id, kind, content;
+      createdAt = DateTime.parse(json['createdAt'] as String);
+  final String id, kind;
   final DateTime createdAt;
+}
+
+class Revision extends RevisionSummary {
+  Revision(super.json)
+    : content = json['content'] as String,
+      notes = List<Json>.unmodifiable((json['notes'] as List).cast<Json>());
+  final String content;
   final List<Json> notes;
 }
 
@@ -43,10 +48,19 @@ class Book {
       revisions = List<Revision>.unmodifiable(
         (json['revisions'] as List).map((item) => Revision(item as Json)),
       ),
+      history = List<RevisionSummary>.unmodifiable(
+        ((json['history'] ?? json['revisions']) as List).map(
+          (item) => RevisionSummary(item as Json),
+        ),
+      ),
+      revisionCount =
+          json['revisionCount'] as int? ?? (json['revisions'] as List).length,
       progress = json['progress'] as Json?;
   final String id, title, format, originalPath;
   final List<Json> sections, sheets;
   final List<Revision> revisions;
+  final List<RevisionSummary> history;
+  final int revisionCount;
   final Json? progress;
   Revision get head => revisions.last;
   bool get editable => format == 'markdown' || format == 'text';
