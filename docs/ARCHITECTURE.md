@@ -47,5 +47,7 @@ Pageforge envelope 的數值只允許安全整數 timestamp；未知浮點 envel
 驗證沒有簽章／外部可信 head，不提供對整鏈重寫或尾端截斷的保護。
 編輯工作區、定時復原與正式 VAX 分層；分塊內容樹、操作模型及 root 型事件仍為後續規劃，見 [大型文件合約](LARGE_DOCUMENTS.md)。
 
+識別與多人同步的後續合約見 [ID 與同步](IDENTITY_SYNC.md)；現有本機鎖／主線不提供分散式寫入或自動合併。
+
 測試使用隔離暫存 library，包含現有 TypeScript SDK 產生的中文／emoji golden fixture。
 不讀取或寫入使用者的私人書籍。
