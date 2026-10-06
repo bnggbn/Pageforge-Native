@@ -1,6 +1,6 @@
 # 分層保存、VAX 完整性與大型文件（規劃）
 
-本文件補充 [版本儲存](VERSION_STORAGE.md) 與 [草稿復原](DRAFT_RECOVERY.md)。以下分塊、操作日誌、樹索引及大檔編輯模型尚未實作；不直接提高上限，也不改寫既有 VAX 歷史。
+本文件補充 [版本儲存](VERSION_STORAGE.md) 與 [草稿復原](DRAFT_RECOVERY.md)。新匯入書已有正文物件樹、獨立筆記 blob 及去重讀寫，見 [內容物件架構](CONTENT_OBJECTS.md)。操作日誌、局部操作式更新、root 型正式 VAX 與大檔編輯模型仍待實作；不直接提高上限，也不改寫既有 VAX 歷史。
 
 ## 保存分層
 
@@ -14,7 +14,7 @@ checkpoint 是復原或讀取基準，不代表正式版本。定時保存不得
 
 ## 現在是全文儲存嗎
 
-是。每個 revision JSON 包含完整 content 與 notes；只新增筆記也會重複正文。文字草稿變更時亦保存完整文字。閱讀 API 已只傳目前全文與歷史摘要，但後端冷讀取仍載入、驗證整條歷史；暖快取仍雜湊全部歷史檔案。
+舊書仍是每個 revision JSON 包含完整 content 與 notes；只新增筆記也會重複正文。新匯入書預設為 objects-v1：版本只保存 metadata 與正文／筆記 root，未變物件共用。草稿仍保存完整文字，API 仍傳目前全文；冷讀取仍完整驗證歷史，新格式每次只讀／驗一次相同物件，但不同版本正文仍須還原。
 
 VAX envelope 本身不放全文，它記錄正文、筆記及視圖的雜湊與版本資訊。目前 contentHash 是完整原文 UTF-8 位元組的 SHA-256；notesHash 是完整 notes 的既有 canonical bytes 雜湊。SAI 以協定 domain、前一 SAI 及 canonical envelope 雜湊計算，需維持 vax-sdk 1.0.0 的編碼及兩階段雜湊。
 
@@ -55,7 +55,7 @@ VAX envelope 本身不放全文，它記錄正文、筆記及視圖的雜湊與�
 
 字數換算只針對一般 3-byte 中文字元；ASCII、emoji、混合文字及 JSON 轉義成本不同。上述為容量算術，並非大檔實測結果。
 
-初步隔離量測與現有瓶頸見 [大型文件現況基準](experiments/LARGE_DOCUMENT_BASELINE.md)。分支只增加 opt-in 探針，未完成大型文件儲存／UI 重構。
+初步隔離量測與現有瓶頸見 [大型文件現況基準](experiments/LARGE_DOCUMENT_BASELINE.md)。原基準提交只增加 opt-in 探針；後續已完成新書的物件儲存第一階段，但大型文件 UI 重構尚未完成。新舊格式對照見 [物件儲存基準](experiments/CONTENT_OBJECTS.md)。
 
 ## 實作順序與驗收
 

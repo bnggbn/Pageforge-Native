@@ -1,0 +1,105 @@
+{
+  "date": "2026-10-06",
+  "platform": "windows/amd64",
+  "cpu": "Intel Core Ultra 7 165H",
+  "go": "go1.26.2",
+  "branch": "experiment/large-document-baseline",
+  "source": "runtime commit 66d3095c9a2d31e872a55c5ed6ad7750f180295c",
+  "command": "go test ./internal/library -run '^$' -bench '^BenchmarkObjectHistory$' -benchtime=3x -benchmem",
+  "config": {
+    "revisionFormat": "objects-v1",
+    "inlineObjectBytes": 65536,
+    "objectCatalogMiB": 8,
+    "objectCount": 100000,
+    "historyMiB": 256,
+    "verifiedCacheMiB": 64
+  },
+  "fixture": {
+    "runes": 1000000,
+    "versions": 40,
+    "seed": 526,
+    "alphabet": "abcdefghijklmnop0123456789文字章節🌿🧩\n "
+  },
+  "results": [
+    {
+      "shape": "notes",
+      "format": "legacy",
+      "temperature": "cold",
+      "iterations": 3,
+      "nsPerOp": 1081011333,
+      "diskMiB": 56.37,
+      "allocatedBytesPerOp": 250178925,
+      "allocationsPerOp": 24054
+    },
+    {
+      "shape": "notes",
+      "format": "legacy",
+      "temperature": "repeat",
+      "iterations": 3,
+      "nsPerOp": 161465533,
+      "diskMiB": 56.37,
+      "allocatedBytesPerOp": 144074,
+      "allocationsPerOp": 729
+    },
+    {
+      "shape": "notes",
+      "format": "objects-v1",
+      "temperature": "cold",
+      "iterations": 3,
+      "nsPerOp": 118907000,
+      "diskMiB": 2.75,
+      "allocatedBytesPerOp": 12194866,
+      "allocationsPerOp": 23799
+    },
+    {
+      "shape": "notes",
+      "format": "objects-v1",
+      "temperature": "repeat",
+      "iterations": 3,
+      "nsPerOp": 90227800,
+      "diskMiB": 2.75,
+      "allocatedBytesPerOp": 1873568,
+      "allocationsPerOp": 2167
+    },
+    {
+      "shape": "prefix_edits",
+      "format": "legacy",
+      "temperature": "cold",
+      "iterations": 3,
+      "nsPerOp": 1126056400,
+      "diskMiB": 56.37,
+      "allocatedBytesPerOp": 305364157,
+      "allocationsPerOp": 21339
+    },
+    {
+      "shape": "prefix_edits",
+      "format": "legacy",
+      "temperature": "repeat",
+      "iterations": 3,
+      "nsPerOp": 171690767,
+      "diskMiB": 56.37,
+      "allocatedBytesPerOp": 148080,
+      "allocationsPerOp": 691
+    },
+    {
+      "shape": "prefix_edits",
+      "format": "objects-v1",
+      "temperature": "cold",
+      "iterations": 3,
+      "nsPerOp": 245703667,
+      "diskMiB": 4.889,
+      "allocatedBytesPerOp": 127318858,
+      "allocationsPerOp": 23337
+    },
+    {
+      "shape": "prefix_edits",
+      "format": "objects-v1",
+      "temperature": "repeat",
+      "iterations": 3,
+      "nsPerOp": 101271667,
+      "diskMiB": 4.889,
+      "allocatedBytesPerOp": 4167077,
+      "allocationsPerOp": 2605
+    }
+  ]
+}
