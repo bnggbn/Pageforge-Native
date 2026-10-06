@@ -1,6 +1,8 @@
 package library
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -20,10 +22,12 @@ var uuid = regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]
 var extensions = map[string]string{"markdown": "md", "text": "txt", "pdf": "pdf", "epub": "epub", "xlsx": "xlsx"}
 
 type Store struct {
-	root   string
-	config config.Config
-	mu     sync.RWMutex
-	lock   string
+	root    string
+	config  config.Config
+	mu      sync.RWMutex
+	lock    string
+	cacheMu sync.Mutex
+	cache   *verifiedBook
 }
 
 func Open(c config.Config) (*Store, error) {
@@ -77,11 +81,11 @@ func (s *Store) manifest(id string) (model.Manifest, error) {
 	if err != nil {
 		return m, err
 	}
-	if err = readJSON(file, &m); err != nil {
+	if err = s.readJSON(file, &m); err != nil {
 		return m, err
 	}
 	if m.Document.ID != id || extensions[m.Document.Format] == "" ||
-		m.OriginalFile != "original."+extensions[m.Document.Format] || len(m.RevisionIDs) == 0 {
+		m.OriginalFile != "original."+extensions[m.Document.Format] || len(m.RevisionIDs) == 0 || len(m.RevisionIDs) > s.config.Limits.RevisionCount {
 		return m, fmt.Errorf("文件 manifest 無效")
 	}
 	for _, revision := range m.RevisionIDs {
@@ -103,17 +107,51 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	if err != nil {
 		return b, err
 	}
-	source, err := os.ReadFile(b.OriginalPath)
+	key, size, err := s.historyFingerprint(m, b.OriginalPath)
+	if err != nil {
+		return b, err
+	}
+	s.cacheMu.Lock()
+	cached := s.cache
+	if cached != nil && cached.key == key {
+		b = cloneBook(cached.book)
+		s.cacheMu.Unlock()
+		b.Progress = s.progress(m)
+		return b, nil
+	}
+	s.cacheMu.Unlock()
+	source, err := readBounded(b.OriginalPath, int64(s.config.Limits.DocumentMiB)*1024*1024)
+	if err != nil {
+		return b, err
+	}
+	loadedDigest, err := historyDigest(m)
+	if err != nil {
+		return b, err
+	}
+	appendFingerprint(loadedDigest, source)
+	consumed := int64(len(source))
+	versions, err := s.safe("books", id, "versions")
 	if err != nil {
 		return b, err
 	}
 	for _, revisionID := range m.RevisionIDs {
-		file, err := s.safe("books", id, "versions", revisionID+".json")
+		file, err := revisionPath(versions, revisionID)
 		if err != nil {
 			return b, err
 		}
 		var revision model.Revision
-		if err = readJSON(file, &revision); err != nil {
+		limit := int64(s.config.Storage.RecordMiB) * 1024 * 1024
+		remaining := int64(s.config.Storage.HistoryMiB)*1024*1024 - consumed
+		if remaining < limit {
+			limit = remaining
+		}
+		data, err := readBounded(file, limit)
+		if err != nil {
+			return b, err
+		}
+		consumed += int64(len(data))
+		appendFingerprint(loadedDigest, data)
+		if err = json.Unmarshal(data, &revision); err != nil {
 			return b, err
 		}
 		if revision.ID != revisionID {
@@ -123,6 +161,15 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	}
 	if err = vax.Verify(b.Document, source, b.Revisions); err != nil {
 		return b, err
+	}
+	// The cache key must identify the exact bytes passed to VAX, including external-write races.
+	if key != hex.EncodeToString(loadedDigest.Sum(nil)) {
+		return b, fmt.Errorf("歷史在驗證時被外部修改，請重新載入")
+	}
+	if size <= int64(s.config.Storage.VerifiedCacheMiB)*1024*1024 {
+		s.cacheMu.Lock()
+		s.cache = &verifiedBook{key: key, book: cloneBook(b)}
+		s.cacheMu.Unlock()
 	}
 	b.Progress = s.progress(m)
 	return b, nil
@@ -164,7 +211,11 @@ func (s *Store) progress(m model.Manifest) *model.Position {
 		return nil
 	}
 	var value model.Position
-	if err = readJSON(file, &value); err != nil {
+	data, err := readBounded(file, 16*1024)
+	if err == nil {
+		err = json.Unmarshal(data, &value)
+	}
+	if err != nil {
 		if os.IsNotExist(err) {
 			return m.Progress
 		}

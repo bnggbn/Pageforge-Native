@@ -78,7 +78,7 @@ func (s *Store) SaveEvidence(id string, input SaveEvidence) (model.EvidenceWall,
 		return input.Wall, err
 	}
 	var revision model.Revision
-	if err = readJSON(file, &revision); err != nil {
+	if err = s.readJSON(file, &revision); err != nil {
 		return input.Wall, err
 	}
 	notes := map[string]bool{}

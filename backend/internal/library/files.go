@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -56,7 +57,7 @@ func (s *Store) safe(parts ...string) (string, error) {
 	return file, nil
 }
 func readJSON(file string, value any) error {
-	data, err := os.ReadFile(file)
+	data, err := readBounded(file, 64*1024*1024)
 	if err != nil {
 		return err
 	}
@@ -76,4 +77,49 @@ func writeSource(file string, source []byte) error {
 		return err
 	}
 	return closeErr
+}
+
+// LimitReader enforces the budget even when a file grows after opening.
+func readBounded(file string, limit int64) ([]byte, error) {
+	stream, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer stream.Close()
+	stat, err := stream.Stat()
+	if err != nil {
+		return nil, err
+	}
+	if !stat.Mode().IsRegular() || stat.Size() > limit {
+		return nil, fmt.Errorf("資料檔超過讀取容量或不是一般檔案")
+	}
+	data, err := io.ReadAll(io.LimitReader(stream, limit+1))
+	if err == nil && int64(len(data)) > limit {
+		return nil, fmt.Errorf("資料檔超過讀取容量")
+	}
+	return data, err
+}
+func (s *Store) readJSON(file string, value any) error {
+	data, err := readBounded(file, int64(s.config.Storage.RecordMiB)*1024*1024)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, value)
+}
+
+// Check common ancestors once per history operation, then each UUID-named file.
+// The file-level Lstat preserves rejection of links without repeating four parent checks per revision.
+func revisionPath(folder, id string) (string, error) {
+	if !uuid.MatchString(id) {
+		return "", fmt.Errorf("版本 ID 無效")
+	}
+	file := filepath.Join(folder, id+".json")
+	stat, err := os.Lstat(file)
+	if err != nil {
+		return "", err
+	}
+	if !stat.Mode().IsRegular() {
+		return "", fmt.Errorf("版本必須是一般檔案，不允許連結")
+	}
+	return file, nil
 }

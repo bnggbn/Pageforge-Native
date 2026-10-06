@@ -42,8 +42,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/books", func(w http.ResponseWriter, r *http.Request) { books, err := s.Store.List(); respond(w, books, err) })
 	mux.HandleFunc("GET /v1/books/{id}", func(w http.ResponseWriter, r *http.Request) {
 		book, err := s.Store.Load(r.PathValue("id"))
-		respond(w, book, err)
+		respond(w, readerProjection(book, r), err)
 	})
+	mux.HandleFunc("GET /v1/books/{id}/versions/{revision}", s.revision)
 	mux.HandleFunc("POST /v1/import", s.importBook)
 	mux.HandleFunc("POST /v1/collection/sync", func(w http.ResponseWriter, r *http.Request) {
 		count, err := s.Store.SyncCollection()

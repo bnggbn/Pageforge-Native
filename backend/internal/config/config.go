@@ -8,6 +8,15 @@ import (
 )
 
 type Config struct {
+	Transport struct {
+		RequestTimeoutMs int `json:"requestTimeoutMs"`
+		ResponseMiB      int `json:"responseMiB"`
+	} `json:"transport"`
+	Storage struct {
+		RecordMiB        int `json:"recordMiB"`
+		HistoryMiB       int `json:"historyMiB"`
+		VerifiedCacheMiB int `json:"verifiedCacheMiB"`
+	} `json:"storage"`
 	EvidenceWall struct {
 		MaxTopics           int `json:"maxTopics"`
 		TopicNameCharacters int `json:"topicNameCharacters"`
@@ -46,6 +55,11 @@ type Config struct {
 
 func Load(root string) (Config, error) {
 	var c Config
+	c.Transport.RequestTimeoutMs = 30000
+	c.Transport.ResponseMiB = 64
+	c.Storage.RecordMiB = 64
+	c.Storage.HistoryMiB = 256
+	c.Storage.VerifiedCacheMiB = 64
 	c.EvidenceWall.MaxTopics = 32
 	c.EvidenceWall.TopicNameCharacters = 80
 	c.EvidenceWall.LayoutMiB = 4
@@ -95,6 +109,15 @@ func Load(root string) (Config, error) {
 		c.EvidenceWall.CanvasHeight > 20000 ||
 		c.EvidenceWall.SaveDebounceMs < 100 {
 		return c, fmt.Errorf("線索牆設定無效")
+	}
+	if c.Transport.RequestTimeoutMs < 1000 || c.Transport.RequestTimeoutMs > 120000 ||
+		c.Transport.ResponseMiB < 1 || c.Transport.ResponseMiB > 512 {
+		return c, fmt.Errorf("HTTP 讀取設定無效")
+	}
+	if c.Storage.RecordMiB < 1 || c.Storage.RecordMiB > 512 ||
+		c.Storage.HistoryMiB < c.Storage.RecordMiB || c.Storage.HistoryMiB > 4096 ||
+		c.Storage.VerifiedCacheMiB < 0 || c.Storage.VerifiedCacheMiB > 512 {
+		return c, fmt.Errorf("歷史讀取與快取設定無效")
 	}
 	if c.Paths.LibraryRoot == "" || c.Limits.TextMiB < 1 || c.Limits.RequestMiB < c.Limits.TextMiB*2 ||
 		c.Limits.RevisionCount < 1 || c.Limits.WorkingCopyCount < 1 || c.Diff.MaxCharacters < 1 ||

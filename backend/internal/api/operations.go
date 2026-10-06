@@ -34,7 +34,7 @@ func (s *Server) commit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	book, err := s.Store.Commit(r.PathValue("id"), input)
-	respond(w, book, err)
+	respond(w, readerProjection(book, r), err)
 }
 func (s *Server) progress(w http.ResponseWriter, r *http.Request) {
 	var input model.Position

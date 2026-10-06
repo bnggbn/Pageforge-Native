@@ -14,6 +14,31 @@ import (
 func (s *Store) Import(filename string, source []byte) (string, bool, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	index, err := s.importIndex()
+	if err != nil {
+		return "", false, err
+	}
+	return s.importWithIndex(filename, source, index)
+}
+func (s *Store) importIndex() (map[string]string, error) {
+	entries, err := os.ReadDir(filepath.Join(s.root, "books"))
+	if err != nil {
+		return nil, err
+	}
+	index := map[string]string{}
+	for _, entry := range entries {
+		if !uuid.MatchString(entry.Name()) {
+			continue
+		}
+		m, err := s.manifest(entry.Name())
+		if err != nil {
+			return nil, err
+		}
+		index[m.Document.Format+":"+m.Document.OriginalHash] = m.Document.ID
+	}
+	return index, nil
+}
+func (s *Store) importWithIndex(filename string, source []byte, index map[string]string) (string, bool, error) {
 	if filename != filepath.Base(filename) || strings.ContainsAny(filename, "\\\x00") {
 		return "", false, fmt.Errorf("檔名無效")
 	}
@@ -33,18 +58,8 @@ func (s *Store) Import(filename string, source []byte) (string, bool, error) {
 		return "", false, fmt.Errorf("需為非空白 UTF-8 文字，且不可超過設定容量")
 	}
 	hash := vax.Hash(source)
-	books, err := s.list()
-	if err != nil {
-		return "", false, err
-	}
-	for _, item := range books {
-		m, err := s.manifest(item.ID)
-		if err != nil {
-			return "", false, err
-		}
-		if m.Document.Format == format && m.Document.OriginalHash == hash {
-			return item.ID, true, nil
-		}
+	if id, found := index[format+":"+hash]; found {
+		return id, true, nil
 	}
 	id := vax.UUID()
 	actor := "pageforge:" + id
@@ -79,9 +94,16 @@ func (s *Store) Import(filename string, source []byte) (string, bool, error) {
 	if err = os.Rename(pending, filepath.Join(booksDir, id)); err != nil {
 		return "", false, err
 	}
+	index[format+":"+hash] = id
 	return id, false, nil
 }
 func (s *Store) SyncCollection() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	index, err := s.importIndex()
+	if err != nil {
+		return 0, err
+	}
 	entries, err := os.ReadDir(filepath.Join(s.root, "collection"))
 	if err != nil {
 		return 0, err
@@ -96,18 +118,11 @@ func (s *Store) SyncCollection() (int, error) {
 		if err != nil {
 			return count, err
 		}
-		stat, err := os.Stat(file)
+		bytes, err := readBounded(file, int64(s.config.Limits.TextMiB)*1024*1024)
 		if err != nil {
 			return count, err
 		}
-		if stat.Size() > int64(s.config.Limits.TextMiB*1024*1024) {
-			return count, fmt.Errorf("來源文件超過容量")
-		}
-		bytes, err := os.ReadFile(file)
-		if err != nil {
-			return count, err
-		}
-		_, duplicate, err := s.Import(entry.Name(), bytes)
+		_, duplicate, err := s.importWithIndex(entry.Name(), bytes, index)
 		if err != nil {
 			return count, err
 		}

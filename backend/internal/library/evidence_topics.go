@@ -21,7 +21,7 @@ func migrateEvidence(w model.EvidenceWall) model.EvidenceWall {
 
 // Reading only exposes migration in memory. First successful write keeps a V1 backup.
 func (s *Store) backupEvidenceV1(id, file string) error {
-	data, err := os.ReadFile(file)
+	data, err := readBounded(file, int64(s.config.EvidenceWall.LayoutMiB)*1024*1024)
 	if os.IsNotExist(err) {
 		return nil
 	}

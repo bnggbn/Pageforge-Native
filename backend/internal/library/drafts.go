@@ -1,6 +1,7 @@
 package library
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -32,6 +33,8 @@ func (s *Store) drafts(id string) ([]model.Draft, error) {
 		return nil, err
 	}
 	result := []model.Draft{}
+	count := 0
+	var total int64
 	for _, entry := range entries {
 		if entry.IsDir() || !uuid.MatchString(strings.TrimSuffix(entry.Name(), ".json")) || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -40,8 +43,22 @@ func (s *Store) drafts(id string) ([]model.Draft, error) {
 		if err != nil {
 			return nil, err
 		}
+		count++
+		if count > s.config.Limits.WorkingCopyCount {
+			return nil, fmt.Errorf("草稿數超過設定容量")
+		}
+		limit := int64(s.config.Storage.RecordMiB) * 1024 * 1024
+		remaining := int64(s.config.Storage.HistoryMiB)*1024*1024 - total
+		if remaining < limit {
+			limit = remaining
+		}
+		data, err := readBounded(file, limit)
+		if err != nil {
+			return nil, err
+		}
+		total += int64(len(data))
 		var copy model.Draft
-		if err = readJSON(file, &copy); err != nil {
+		if err = json.Unmarshal(data, &copy); err != nil {
 			return nil, err
 		}
 		if copy.DocumentID != id || copy.ID+".json" != entry.Name() {
@@ -77,7 +94,7 @@ func (s *Store) SaveDraft(id string, copy model.Draft, expectedVersion *string) 
 		return copy, err
 	}
 	var old model.Draft
-	err = readJSON(file, &old)
+	err = s.readJSON(file, &old)
 	if err == nil {
 		if expectedVersion == nil || old.Version != *expectedVersion {
 			return copy, ErrConflict
@@ -125,7 +142,7 @@ func (s *Store) RemoveDraft(id, draftID, version string) error {
 		return err
 	}
 	var copy model.Draft
-	if err = readJSON(file, &copy); err != nil {
+	if err = s.readJSON(file, &copy); err != nil {
 		return err
 	}
 	if copy.Version != version {
