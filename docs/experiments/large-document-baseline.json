@@ -1,0 +1,1004 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "branch": "experiment/large-document-baseline",
+    "uiCharacters": [
+      100000,
+      1000000
+    ],
+    "processors": 22,
+    "commit": "bfb57bdd5f7bac597541ae09af24b873f5ec88fd",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "views": [
+      "editor",
+      "plain",
+      "markdown"
+    ],
+    "timestamp": "2026-10-06T10:49:29.8360006+08:00",
+    "go": "go1.26.2",
+    "flutter": "3.41.7",
+    "dart": "3.11.5"
+  },
+  "units": {
+    "ms": "wall milliseconds",
+    "allocatedBytes": "cumulative Go allocation; not RSS or peak"
+  },
+  "limits": {
+    "defaultTextMiB": 5,
+    "experimentTextMiB": 32,
+    "experimentDocumentMiB": 32,
+    "experimentRequestMiB": 64,
+    "experimentHistoryMiB": 512,
+    "verifiedCacheMiB": 64
+  },
+  "backend": [
+    {
+      "characters": 100000,
+      "utf8Bytes": 179296,
+      "utf16Units": 101606,
+      "initialRevisions": 10,
+      "defaultAccepted": true,
+      "cacheEligible": true,
+      "historyBytes": 1994148,
+      "readerBytes": 183196,
+      "finalDiskBytes": 2902303,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 17.818,
+          "allocatedBytes": 1966240,
+          "mallocs": 907
+        },
+        {
+          "operation": "raised_import",
+          "ms": 20.716,
+          "allocatedBytes": 1932384,
+          "mallocs": 396
+        },
+        {
+          "operation": "cold_load",
+          "ms": 230.671,
+          "allocatedBytes": 11152592,
+          "mallocs": 5499
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 26.651,
+          "allocatedBytes": 83288,
+          "mallocs": 275
+        },
+        {
+          "operation": "cold_load",
+          "ms": 81.074,
+          "allocatedBytes": 11147496,
+          "mallocs": 5437
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 19.211,
+          "allocatedBytes": 83432,
+          "mallocs": 277
+        },
+        {
+          "operation": "cold_load",
+          "ms": 52.471,
+          "allocatedBytes": 11144920,
+          "mallocs": 5451
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 17.476,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 17.75,
+          "allocatedBytes": 1390712,
+          "mallocs": 517
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 16.726,
+          "allocatedBytes": 1377144,
+          "mallocs": 326
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 42.38,
+          "allocatedBytes": 1377144,
+          "mallocs": 326
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 10.967,
+          "allocatedBytes": 1389296,
+          "mallocs": 239
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 33.087,
+          "allocatedBytes": 2122248,
+          "mallocs": 183
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 21.083,
+          "allocatedBytes": 2122248,
+          "mallocs": 183
+        },
+        {
+          "operation": "default_diff",
+          "ms": 10.558,
+          "allocatedBytes": 2375952,
+          "mallocs": 15
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 39.434,
+          "allocatedBytes": 1776664,
+          "mallocs": 716
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 131.258,
+          "allocatedBytes": 13898624,
+          "mallocs": 6447
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 103.574,
+          "allocatedBytes": 14959032,
+          "mallocs": 6941
+        },
+        {
+          "operation": "note_commit",
+          "ms": 148.728,
+          "allocatedBytes": 15845328,
+          "mallocs": 7548
+        }
+      ]
+    },
+    {
+      "characters": 1000000,
+      "utf8Bytes": 1794998,
+      "utf16Units": 1016168,
+      "initialRevisions": 10,
+      "defaultAccepted": true,
+      "cacheEligible": true,
+      "historyBytes": 19879370,
+      "readerBytes": 1810147,
+      "finalDiskBytes": 28922285,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 29.029,
+          "allocatedBytes": 19735064,
+          "mallocs": 416
+        },
+        {
+          "operation": "raised_import",
+          "ms": 35.687,
+          "allocatedBytes": 19734152,
+          "mallocs": 392
+        },
+        {
+          "operation": "cold_load",
+          "ms": 705.122,
+          "allocatedBytes": 103539008,
+          "mallocs": 5578
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 36.212,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "cold_load",
+          "ms": 229.027,
+          "allocatedBytes": 103514872,
+          "mallocs": 5525
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 53.729,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "cold_load",
+          "ms": 242.633,
+          "allocatedBytes": 103517616,
+          "mallocs": 5541
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 48.188,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 66.641,
+          "allocatedBytes": 14304120,
+          "mallocs": 336
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 43.6,
+          "allocatedBytes": 14304120,
+          "mallocs": 336
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 64.435,
+          "allocatedBytes": 1902392,
+          "mallocs": 294
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 21.503,
+          "allocatedBytes": 14308896,
+          "mallocs": 173
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 123.385,
+          "allocatedBytes": 22267240,
+          "mallocs": 200
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 105.623,
+          "allocatedBytes": 22267240,
+          "mallocs": 200
+        },
+        {
+          "operation": "default_diff",
+          "ms": 27.129,
+          "allocatedBytes": 13893648,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 99.688,
+          "allocatedBytes": 17947304,
+          "mallocs": 714
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 338.716,
+          "allocatedBytes": 131279616,
+          "mallocs": 6486
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 370.635,
+          "allocatedBytes": 141185816,
+          "mallocs": 7045
+        },
+        {
+          "operation": "note_commit",
+          "ms": 425.275,
+          "allocatedBytes": 149297104,
+          "mallocs": 7698
+        }
+      ]
+    },
+    {
+      "characters": 3000000,
+      "utf8Bytes": 5378953,
+      "utf16Units": 3048269,
+      "initialRevisions": 1,
+      "defaultAccepted": false,
+      "cacheEligible": true,
+      "historyBytes": 10796275,
+      "readerBytes": 5418132,
+      "finalDiskBytes": 37883554,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 2.011,
+          "allocatedBytes": 10833752,
+          "mallocs": 14,
+          "error": "需為非空白 UTF-8 文字，且不可超過設定容量"
+        },
+        {
+          "operation": "raised_import",
+          "ms": 71.149,
+          "allocatedBytes": 60363936,
+          "mallocs": 412
+        },
+        {
+          "operation": "cold_load",
+          "ms": 86.667,
+          "allocatedBytes": 38744744,
+          "mallocs": 795
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 16.335,
+          "allocatedBytes": 62376,
+          "mallocs": 143
+        },
+        {
+          "operation": "cold_load",
+          "ms": 81.262,
+          "allocatedBytes": 38740520,
+          "mallocs": 790
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 14.723,
+          "allocatedBytes": 62376,
+          "mallocs": 143
+        },
+        {
+          "operation": "cold_load",
+          "ms": 89.49,
+          "allocatedBytes": 38742712,
+          "mallocs": 799
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 17.259,
+          "allocatedBytes": 61304,
+          "mallocs": 138
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 57.539,
+          "allocatedBytes": 44181088,
+          "mallocs": 225
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 42.572,
+          "allocatedBytes": 44180944,
+          "mallocs": 223
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 43.543,
+          "allocatedBytes": 44178656,
+          "mallocs": 213
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 39.164,
+          "allocatedBytes": 44206040,
+          "mallocs": 169
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 253.946,
+          "allocatedBytes": 27476872,
+          "mallocs": 149
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 294.585,
+          "allocatedBytes": 66164624,
+          "mallocs": 200
+        },
+        {
+          "operation": "default_diff",
+          "ms": 121.232,
+          "allocatedBytes": 41590800,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 155.808,
+          "allocatedBytes": 54987096,
+          "mallocs": 575
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 494.969,
+          "allocatedBytes": 121144096,
+          "mallocs": 1772
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 663.581,
+          "allocatedBytes": 148637616,
+          "mallocs": 2327
+        },
+        {
+          "operation": "note_commit",
+          "ms": 745.829,
+          "allocatedBytes": 170743440,
+          "mallocs": 2882
+        }
+      ]
+    },
+    {
+      "characters": 3000000,
+      "utf8Bytes": 5378953,
+      "utf16Units": 3048269,
+      "initialRevisions": 10,
+      "defaultAccepted": false,
+      "cacheEligible": true,
+      "historyBytes": 59552875,
+      "readerBytes": 5419104,
+      "finalDiskBytes": 86640565,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 5.286,
+          "allocatedBytes": 10833752,
+          "mallocs": 14,
+          "error": "需為非空白 UTF-8 文字，且不可超過設定容量"
+        },
+        {
+          "operation": "raised_import",
+          "ms": 128.785,
+          "allocatedBytes": 60364328,
+          "mallocs": 420
+        },
+        {
+          "operation": "cold_load",
+          "ms": 2610.375,
+          "allocatedBytes": 286112192,
+          "mallocs": 5582
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 101.874,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "cold_load",
+          "ms": 988.3,
+          "allocatedBytes": 286096712,
+          "mallocs": 5543
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 113.933,
+          "allocatedBytes": 83272,
+          "mallocs": 274
+        },
+        {
+          "operation": "cold_load",
+          "ms": 1160.799,
+          "allocatedBytes": 286096744,
+          "mallocs": 5596
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 128.404,
+          "allocatedBytes": 83560,
+          "mallocs": 278
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 168.38,
+          "allocatedBytes": 44196632,
+          "mallocs": 340
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 164.504,
+          "allocatedBytes": 44196728,
+          "mallocs": 341
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 173.153,
+          "allocatedBytes": 44194344,
+          "mallocs": 330
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 86.917,
+          "allocatedBytes": 5520368,
+          "mallocs": 132
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 377.651,
+          "allocatedBytes": 66160264,
+          "mallocs": 207
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 373.773,
+          "allocatedBytes": 66160216,
+          "mallocs": 206
+        },
+        {
+          "operation": "default_diff",
+          "ms": 115.032,
+          "allocatedBytes": 41590800,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 211.886,
+          "allocatedBytes": 55002152,
+          "mallocs": 728
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 1319.754,
+          "allocatedBytes": 368489168,
+          "mallocs": 6556
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 1379.579,
+          "allocatedBytes": 395966144,
+          "mallocs": 7023
+        },
+        {
+          "operation": "note_commit",
+          "ms": 1675.711,
+          "allocatedBytes": 418081704,
+          "mallocs": 7686
+        }
+      ]
+    },
+    {
+      "characters": 3000000,
+      "utf8Bytes": 5378953,
+      "utf16Units": 3048269,
+      "initialRevisions": 40,
+      "defaultAccepted": false,
+      "cacheEligible": false,
+      "historyBytes": 222074905,
+      "readerBytes": 5422075,
+      "finalDiskBytes": 249163770,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 1.998,
+          "allocatedBytes": 10768192,
+          "mallocs": 12,
+          "error": "需為非空白 UTF-8 文字，且不可超過設定容量"
+        },
+        {
+          "operation": "raised_import",
+          "ms": 108.126,
+          "allocatedBytes": 60298744,
+          "mallocs": 415
+        },
+        {
+          "operation": "cold_load",
+          "ms": 10148.415,
+          "allocatedBytes": 1110632176,
+          "mallocs": 21385
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 4385.068,
+          "allocatedBytes": 1110567416,
+          "mallocs": 21291
+        },
+        {
+          "operation": "cold_load",
+          "ms": 3987.33,
+          "allocatedBytes": 1110576192,
+          "mallocs": 21304
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 4319.221,
+          "allocatedBytes": 1110573504,
+          "mallocs": 21254
+        },
+        {
+          "operation": "cold_load",
+          "ms": 4186.171,
+          "allocatedBytes": 1110574992,
+          "mallocs": 21255
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 3737.991,
+          "allocatedBytes": 1110577400,
+          "mallocs": 21275
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 3859.547,
+          "allocatedBytes": 1154691992,
+          "mallocs": 21507
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 3608.395,
+          "allocatedBytes": 1154686152,
+          "mallocs": 21338
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 4026.936,
+          "allocatedBytes": 1154689392,
+          "mallocs": 21378
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 62.335,
+          "allocatedBytes": 44207856,
+          "mallocs": 213
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 269.086,
+          "allocatedBytes": 66166264,
+          "mallocs": 243
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 287.696,
+          "allocatedBytes": 66166328,
+          "mallocs": 244
+        },
+        {
+          "operation": "default_diff",
+          "ms": 111.669,
+          "allocatedBytes": 41590800,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 4108.152,
+          "allocatedBytes": 1165482528,
+          "mallocs": 21817
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 3843.323,
+          "allocatedBytes": 1192976056,
+          "mallocs": 22362
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 2686.045,
+          "allocatedBytes": 1220442312,
+          "mallocs": 22767
+        },
+        {
+          "operation": "note_commit",
+          "ms": 2801.543,
+          "allocatedBytes": 1242634680,
+          "mallocs": 23587
+        }
+      ]
+    },
+    {
+      "characters": 5000000,
+      "utf8Bytes": 8963880,
+      "utf16Units": 5080484,
+      "initialRevisions": 1,
+      "defaultAccepted": false,
+      "cacheEligible": true,
+      "historyBytes": 17991129,
+      "readerBytes": 9028060,
+      "finalDiskBytes": 63128043,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 1.642,
+          "allocatedBytes": 17944384,
+          "mallocs": 12,
+          "error": "需為非空白 UTF-8 文字，且不可超過設定容量"
+        },
+        {
+          "operation": "raised_import",
+          "ms": 112.964,
+          "allocatedBytes": 97277640,
+          "mallocs": 425
+        },
+        {
+          "operation": "cold_load",
+          "ms": 136.955,
+          "allocatedBytes": 71078744,
+          "mallocs": 773
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 37.194,
+          "allocatedBytes": 60136,
+          "mallocs": 134
+        },
+        {
+          "operation": "cold_load",
+          "ms": 144.257,
+          "allocatedBytes": 71079072,
+          "mallocs": 792
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 29.107,
+          "allocatedBytes": 62376,
+          "mallocs": 143
+        },
+        {
+          "operation": "cold_load",
+          "ms": 132.912,
+          "allocatedBytes": 71081656,
+          "mallocs": 799
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 28.413,
+          "allocatedBytes": 60136,
+          "mallocs": 134
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 75.05,
+          "allocatedBytes": 88457072,
+          "mallocs": 216
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 70.644,
+          "allocatedBytes": 88457072,
+          "mallocs": 216
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 73.06,
+          "allocatedBytes": 88457184,
+          "mallocs": 217
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 57.12,
+          "allocatedBytes": 70420568,
+          "mallocs": 171
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 439.854,
+          "allocatedBytes": 110360384,
+          "mallocs": 202
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 565.348,
+          "allocatedBytes": 110360400,
+          "mallocs": 202
+        },
+        {
+          "operation": "default_diff",
+          "ms": 129.648,
+          "allocatedBytes": 69312528,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 128.166,
+          "allocatedBytes": 88378512,
+          "mallocs": 609
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 672.223,
+          "allocatedBytes": 208460136,
+          "mallocs": 1780
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 759.597,
+          "allocatedBytes": 257504096,
+          "mallocs": 2283
+        },
+        {
+          "operation": "note_commit",
+          "ms": 851.893,
+          "allocatedBytes": 297596248,
+          "mallocs": 2926
+        }
+      ]
+    },
+    {
+      "characters": 5000000,
+      "utf8Bytes": 8963880,
+      "utf16Units": 5080484,
+      "initialRevisions": 10,
+      "defaultAccepted": false,
+      "cacheEligible": false,
+      "historyBytes": 99237072,
+      "readerBytes": 9029031,
+      "finalDiskBytes": 144374397,
+      "samples": [
+        {
+          "operation": "default_import",
+          "ms": 2.678,
+          "allocatedBytes": 18009944,
+          "mallocs": 14,
+          "error": "需為非空白 UTF-8 文字，且不可超過設定容量"
+        },
+        {
+          "operation": "raised_import",
+          "ms": 111.352,
+          "allocatedBytes": 97343040,
+          "mallocs": 424
+        },
+        {
+          "operation": "cold_load",
+          "ms": 3617.261,
+          "allocatedBytes": 512581512,
+          "mallocs": 5638
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 1026.403,
+          "allocatedBytes": 512558168,
+          "mallocs": 5571
+        },
+        {
+          "operation": "cold_load",
+          "ms": 1015.711,
+          "allocatedBytes": 512559528,
+          "mallocs": 5521
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 967.389,
+          "allocatedBytes": 512554024,
+          "mallocs": 5567
+        },
+        {
+          "operation": "cold_load",
+          "ms": 983.651,
+          "allocatedBytes": 512561352,
+          "mallocs": 5621
+        },
+        {
+          "operation": "repeat_load",
+          "ms": 1014.834,
+          "allocatedBytes": 512556560,
+          "mallocs": 5585
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 1035.66,
+          "allocatedBytes": 600948040,
+          "mallocs": 5645
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 1058.308,
+          "allocatedBytes": 600961160,
+          "mallocs": 5707
+        },
+        {
+          "operation": "reader_handler",
+          "ms": 1036.433,
+          "allocatedBytes": 600950304,
+          "mallocs": 5614
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 50.191,
+          "allocatedBytes": 70416400,
+          "mallocs": 181
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 511.748,
+          "allocatedBytes": 110356264,
+          "mallocs": 213
+        },
+        {
+          "operation": "full_draft_save",
+          "ms": 474.547,
+          "allocatedBytes": 110355992,
+          "mallocs": 210
+        },
+        {
+          "operation": "default_diff",
+          "ms": 127.866,
+          "allocatedBytes": 69312528,
+          "mallocs": 6,
+          "error": "比較內容超過設定上限，請匯出後比較"
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 1160.394,
+          "allocatedBytes": 600870848,
+          "mallocs": 6018
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 1506.961,
+          "allocatedBytes": 649911328,
+          "mallocs": 6551
+        },
+        {
+          "operation": "edit_commit",
+          "ms": 1614.783,
+          "allocatedBytes": 698973672,
+          "mallocs": 7131
+        },
+        {
+          "operation": "note_commit",
+          "ms": 1685.179,
+          "allocatedBytes": 739096424,
+          "mallocs": 7742
+        }
+      ]
+    }
+  ],
+  "ui": [
+    {
+      "view": "editor",
+      "characters": 100000,
+      "utf8Bytes": 179595,
+      "utf16Units": 101589,
+      "firstPumpMs": 856.306,
+      "idlePumpMs": 14.234,
+      "appendPumpMs": [
+        446.462,
+        439.981,
+        423.877,
+        396.343,
+        380.246
+      ]
+    },
+    {
+      "view": "plain",
+      "characters": 100000,
+      "utf8Bytes": 179595,
+      "utf16Units": 101589,
+      "firstPumpMs": 1150.486,
+      "idlePumpMs": 100.242,
+      "jumpToEndPumpMs": 51.773
+    },
+    {
+      "view": "markdown",
+      "characters": 100000,
+      "utf8Bytes": 179595,
+      "utf16Units": 101589,
+      "firstPumpMs": 1515.567,
+      "idlePumpMs": 61.748,
+      "jumpToEndPumpMs": 58.947
+    },
+    {
+      "view": "editor",
+      "characters": 1000000,
+      "utf8Bytes": 1793969,
+      "utf16Units": 1016245,
+      "firstPumpMs": 6069.684,
+      "idlePumpMs": 22.653,
+      "appendPumpMs": [
+        7557.174,
+        7505.141,
+        7789.683,
+        7581.393,
+        7716.776
+      ]
+    },
+    {
+      "view": "plain",
+      "characters": 1000000,
+      "utf8Bytes": 1793969,
+      "utf16Units": 1016245,
+      "firstPumpMs": 12277.686,
+      "idlePumpMs": 1164.395,
+      "jumpToEndPumpMs": 732.653
+    },
+    {
+      "view": "markdown",
+      "characters": 1000000,
+      "utf8Bytes": 1793969,
+      "utf16Units": 1016245,
+      "firstPumpMs": 13639.439,
+      "idlePumpMs": 414.952,
+      "jumpToEndPumpMs": 333.864
+    }
+  ]
+}

@@ -56,6 +56,6 @@ Windows 正常關閉會提示保存／捨棄目前草稿／取消，保存失敗
 舊 library 格式保持相容。請先關閉使用該 library 的 Web 或桌面服務，並備份後再指定舊路徑。
 新 repo 預設使用自己的 library，沒有複製私人書籍。
 
-Native 只傳目前版本與歷史摘要；舊草稿按需取基準版本。Go 提供以實際位元組雜湊判斷的有限歷史快取、讀取容量保護及批次匯入索引。HTTP deadline 涵蓋完整回應。設定與 Git 式差異儲存評估見 [版本儲存評估](docs/VERSION_STORAGE.md)。冷讀取與完整歷史 I/O 仍待改善。
+Native 只傳目前版本與歷史摘要；舊草稿按需取基準版本。Go 提供以實際位元組雜湊判斷的有限歷史快取、讀取容量保護及批次匯入索引。HTTP deadline 涵蓋完整回應。設定與 Git 式差異儲存評估見 [版本儲存評估](docs/VERSION_STORAGE.md)。冷讀取與完整歷史 I/O 仍待改善。大型文本的 opt-in 探針、限制與實測瓶頸見 [基準報告](docs/experiments/LARGE_DOCUMENT_BASELINE.md)；目前未通過百萬字體驗驗收。
 
 架構與分階段驗收見 [架構](docs/ARCHITECTURE.md)、[遷移規格](docs/MIGRATION.md)。
