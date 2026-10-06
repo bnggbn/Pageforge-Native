@@ -116,7 +116,7 @@ class EvidenceWallView extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(bottom: 10),
             child: Text(
-              '拖動卡片標頭整理位置；拖曳圖釘，或依序點兩個圖釘連紅線。點紅線可描述關係。',
+              '按住卡片標題或內容，浮起後拖曳整理位置；點一下查看筆記。拖曳圖釘連紅線，點紅線描述關係。',
               style: TextStyle(fontSize: 11),
             ),
           ),
