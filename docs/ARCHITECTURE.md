@@ -45,6 +45,7 @@ VAX 依實際 vax-sdk 1.0.0 原始碼實作：UTF-16 非 ASCII escape、排序�
 Pageforge envelope 的數值只允許安全整數 timestamp；未知浮點 envelope 拒絕。
 內容未變且在快取容量內時，重新雜湊檔案後重用已驗證快照；未命中仍完整驗證。快取只有最近一本且不落盤，不以 mtime 當信任依據。reader API 只傳目前版本與歷史摘要，按 ID 取舊草稿基準；摘要分頁仍待補。設定、效能限制與差異儲存遷移方案見 [版本儲存評估](VERSION_STORAGE.md)。
 驗證沒有簽章／外部可信 head，不提供對整鏈重寫或尾端截斷的保護。
+編輯工作區、定時復原與正式 VAX 分層；分塊內容樹、操作模型及 root 型事件仍為後續規劃，見 [大型文件合約](LARGE_DOCUMENTS.md)。
 
 測試使用隔離暫存 library，包含現有 TypeScript SDK 產生的中文／emoji golden fixture。
 不讀取或寫入使用者的私人書籍。

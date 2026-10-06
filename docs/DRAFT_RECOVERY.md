@@ -19,11 +19,13 @@
 復原單位是 document ID + draft ID + generation，紀錄完整基準 checkpoint 及其後的增量。每一 generation 保持自己的 baseRevisionId，換基準或衝突另存草稿時開新 generation，不能把兩條草稿的增量混在一起。
 
 - 初始保存建立完整 checkpoint，包含 content／body／quote／location。之後增量保存這些草稿欄位的變更；Markdown／TXT 可含正文，PDF／EPUB／XLSX 則包含其可編輯的筆記草稿。正式 notes 與布局仍使用各自持久化合約。
-- Go 負責產生與驗證可精確往返的儲存增量。UI 顯示用 diff 有時間及長度限制，不能作為唯一恢復資料。UTF-8 位元組偏移需檢查字元邊界，驗收中文、emoji、合成字元、空行與檔尾換行。
-- 每筆紀錄包含 schema version、generation、連續 sequence、父狀態雜湊、還原後狀態雜湊、長度及 checksum。相同 sequence 的重試須冪等；不同內容、過期 token 或錯誤基準須拒絕，不能覆蓋另一份草稿。
+- Go 負責驗證與持久化可精確往返的儲存增量。大型文件由編輯模型提供有基準的操作，避免定時傳全文後重新算 diff；小型 legacy 草稿可先維持完整傳輸。UI 顯示用 diff 有時間及長度限制，不能作為唯一恢復資料。UTF-8 位元組偏移需檢查字元邊界，驗收中文、emoji、合成字元、空行與檔尾換行。
+- 每筆紀錄包含 schema version、document／draft／generation、連續 sequence、前一紀錄雜湊、基準識別、操作負載與長度；紀錄雜湊覆蓋這些欄位，初筆綁定已驗證 checkpoint。checkpoint 保存完整狀態承諾，重播驗證實際內容；若採區塊樹根需另帶演算法標籤。不得為每筆高頻紀錄重新雜湊全文。相同 sequence 的重試須冪等；不同內容、過期 token 或錯誤基準須拒絕，不能覆蓋另一份草稿。
 - 增量無收益、達到還原深度或容量門檻時，改寫新的完整 checkpoint。初期候選深度為 16；單紀錄、日誌總量、還原後內容與 replay 工作量均需設上限。
 - 追加紀錄後 Sync 才確認保存。新 checkpoint 先寫暫存檔、同步及驗證，再原子發布 generation 索引；舊 checkpoint／日誌至少保留至新索引發布成功且可重開驗證。Windows 的發布順序需用崩潰注入實測。
 - 原本 draft JSON 及其讀取器保留，先以增量日誌作附加復原資料，驗證與遷移完成後才考慮替代完整草稿寫入。正式 original、versions 與 VAX canonical bytes 不改寫。
+
+checkpoint 與復原紀錄不追加正式 VAX；分層完整性、區塊儲存及百萬字文件的相容界線見 [大型文件規劃](LARGE_DOCUMENTS.md)。
 
 增量減少重複落盤內容；保存期限來自排程，完整快照也可以做到。實作順序先補最大等待與請求合併，再接可驗證日誌，最後評估壓縮／去重收益。
 
