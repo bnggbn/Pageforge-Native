@@ -4,14 +4,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'bounded_response.dart';
 import 'models.dart';
-
-class ApiException implements Exception {
-  ApiException(this.message, this.status);
-  final String message;
-  final int status;
-  @override
-  String toString() => message;
-}
+import 'api_exception.dart';
+export 'api_exception.dart';
 
 abstract class LibraryRepository {
   Future<Json> settings();
@@ -80,22 +74,10 @@ class HttpLibraryRepository implements LibraryRepository {
       timeout: timeout,
       maxBytes: maxResponseBytes,
     );
-    dynamic value;
-    try {
-      value = jsonDecode(response.body);
-    } on FormatException {
-      if (response.statusCode >= 400) {
-        throw ApiException('後端請求失敗', response.statusCode);
-      }
-      rethrow;
-    }
     if (response.statusCode >= 400) {
-      throw ApiException(
-        value is Map ? '${value['error']}' : '後端請求失敗',
-        response.statusCode,
-      );
+      throw ApiException.decodeResponse(response.body, response.statusCode);
     }
-    return value;
+    return jsonDecode(response.body);
   }
 
   @override
@@ -126,7 +108,7 @@ class HttpLibraryRepository implements LibraryRepository {
     final config = await settings();
     if (await file.length() >
         (config['limits']['textMiB'] as int) * 1024 * 1024) {
-      throw ApiException('文件超過設定容量。', 413);
+      throw ApiException('文件超過設定容量。', 413, code: 'LIMIT_EXCEEDED');
     }
     final filename = file.uri.pathSegments.last;
     final result =

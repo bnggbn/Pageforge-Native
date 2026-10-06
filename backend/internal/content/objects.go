@@ -5,11 +5,13 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 )
 
 const (
@@ -47,15 +49,15 @@ func Open(root string, maxBlob int64) (*Store, error) {
 
 func OpenWithOptions(root string, maxBlob int64, options Options) (*Store, error) {
 	if maxBlob < MaxChunk {
-		return nil, fmt.Errorf("invalid object capacity")
+		return nil, fault.New(fault.Internal, "invalid object capacity")
 	}
 	if err := checkPath(root); err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	if options.InlineBytes < 0 || options.InlineBytes > MaxChunk ||
 		options.CatalogMiB < 1 || options.CatalogMiB > 32 ||
 		options.MaxObjects < 1 || options.MaxObjects > 1000000 {
-		return nil, fmt.Errorf("invalid object catalog options")
+		return nil, fault.New(fault.Internal, "invalid object catalog options")
 	}
 	s := &Store{
 		root: root, maxBlob: maxBlob, inlineBytes: options.InlineBytes,
@@ -63,7 +65,7 @@ func OpenWithOptions(root string, maxBlob int64, options Options) (*Store, error
 		catalogCount: options.MaxObjects,
 	}
 	if err := s.loadCatalog(); err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	return s, nil
 }
@@ -72,11 +74,11 @@ func checkPath(file string) error {
 	current := filepath.Clean(file)
 	for {
 		info, err := os.Lstat(current)
-		if err != nil && !os.IsNotExist(err) {
-			return err
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return fault.Read(err)
 		}
 		if err == nil && info.Mode()&os.ModeSymlink != 0 {
-			return fmt.Errorf("object path cannot contain links")
+			return fault.New(fault.UnsafePath, "object path cannot contain links")
 		}
 		parent := filepath.Dir(current)
 		if parent == current {
@@ -88,7 +90,7 @@ func checkPath(file string) error {
 
 func (s *Store) location(hash string) (string, error) {
 	if !validHash.MatchString(hash) {
-		return "", fmt.Errorf("invalid object hash")
+		return "", fault.New(fault.StorageCorrupt, "invalid object hash")
 	}
 	file := filepath.Join(s.root, hash[:2], hash+".pfo")
 	return file, checkPath(file)
@@ -100,79 +102,81 @@ func (s *Store) read(hash string) ([]byte, error) {
 
 func (s *Store) openObject(hash string, checkedDirs map[string]bool) (*os.File, os.FileInfo, error) {
 	if !validHash.MatchString(hash) {
-		return nil, nil, fmt.Errorf("invalid object hash")
+		return nil, nil, fault.New(fault.StorageCorrupt, "invalid object hash")
 	}
 	file := filepath.Join(s.root, hash[:2], hash+".pfo")
 	if checkedDirs == nil {
 		if err := checkPath(file); err != nil {
-			return nil, nil, err
+			return nil, nil, fault.Read(err)
 		}
 	} else {
 		folder := filepath.Dir(file)
 		if !checkedDirs[folder] {
 			info, err := os.Lstat(folder)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, fault.Read(err)
 			}
 			if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-				return nil, nil, fmt.Errorf("object shard must be a directory without links")
+				return nil, nil, fault.New(fault.UnsafePath, "object shard must be a directory without links")
 			}
 			checkedDirs[folder] = true
 		}
 	}
 	info, err := os.Lstat(file)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fault.Read(err)
 	}
-	if !info.Mode().IsRegular() || info.Size() > s.maxBlob+int64(len(magic))+1 {
-		return nil, nil, fmt.Errorf("invalid object file or capacity")
+	if !info.Mode().IsRegular() {
+		return nil, nil, fault.New(fault.StorageCorrupt, "invalid object file")
+	}
+	if info.Size() > s.maxBlob+int64(len(magic))+1 {
+		return nil, nil, fault.New(fault.LimitExceeded, "object exceeds capacity")
 	}
 	f, err := os.Open(file)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fault.Read(err)
 	}
 	return f, info, nil
 }
 
 func (s *Store) readInSession(hash string, checkedDirs map[string]bool, remaining int64) ([]byte, error) {
 	if remaining < 0 {
-		return nil, fmt.Errorf("object history capacity exceeded")
+		return nil, fault.New(fault.LimitExceeded, "object history capacity exceeded")
 	}
 	if wire, found := s.inline[hash]; found {
 		if int64(len(wire)) > remaining {
-			return nil, fmt.Errorf("object history capacity exceeded")
+			return nil, fault.New(fault.LimitExceeded, "object history capacity exceeded")
 		}
 		if err := verifyWire(wire, hash); err != nil {
-			return nil, err
+			return nil, fault.Read(err)
 		}
 		return append([]byte(nil), wire...), nil
 	}
 	f, info, err := s.openObject(hash, checkedDirs)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	defer f.Close()
 	if info.Size() > remaining {
-		return nil, fmt.Errorf("object history capacity exceeded")
+		return nil, fault.New(fault.LimitExceeded, "object history capacity exceeded")
 	}
 	data := make([]byte, int(info.Size()))
 	if _, err = io.ReadFull(f, data); err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	var extra [1]byte
 	if n, readErr := f.Read(extra[:]); n != 0 || readErr != io.EOF {
-		return nil, fmt.Errorf("object changed size while reading")
+		return nil, fault.New(fault.StorageCorrupt, "object changed size while reading")
 	}
-	digest := sha256.Sum256(data)
-	if hex.EncodeToString(digest[:]) != hash || len(data) < len(magic)+1 || !bytes.Equal(data[:len(magic)], magic) {
-		return nil, fmt.Errorf("object hash or format mismatch")
+	if err = verifyWire(data, hash); err != nil {
+		return nil, err
 	}
 	return data, nil
 }
 
 func (s *Store) put(kind byte, payload []byte, size int64) (Ref, error) {
 	if int64(len(payload)) > s.maxBlob {
-		return Ref{}, fmt.Errorf("object exceeds capacity")
+		return Ref{}, fault.New(fault.LimitExceeded, "object exceeds capacity")
 	}
 	data := make([]byte, len(magic)+1+len(payload))
 	copy(data, magic)
@@ -182,37 +186,37 @@ func (s *Store) put(kind byte, payload []byte, size int64) (Ref, error) {
 	ref := Ref{Hash: hex.EncodeToString(sum[:]), Bytes: size}
 	if existing, found := s.inline[ref.Hash]; found {
 		if err := verifyWire(existing, ref.Hash); err != nil {
-			return Ref{}, err
+			return Ref{}, fault.Write(err)
 		}
 		if !bytes.Equal(existing, data) {
-			return Ref{}, fmt.Errorf("object collision")
+			return Ref{}, fault.New(fault.StorageCorrupt, "object collision")
 		}
 		return ref, nil
 	}
 	file, err := s.location(ref.Hash)
 	if err != nil {
-		return Ref{}, err
+		return Ref{}, fault.Write(err)
 	}
 	if existing, err := s.read(ref.Hash); err == nil {
 		if !bytes.Equal(existing, data) {
-			return Ref{}, fmt.Errorf("object collision")
+			return Ref{}, fault.New(fault.StorageCorrupt, "object collision")
 		}
 		return ref, nil
-	} else if !os.IsNotExist(err) {
-		return Ref{}, err
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return Ref{}, fault.Write(err)
 	}
 	if s.stageInline(ref, data) {
 		return ref, nil
 	}
 	if err = os.MkdirAll(filepath.Dir(file), 0700); err != nil {
-		return Ref{}, err
+		return Ref{}, fault.Write(err)
 	}
 	if err = checkPath(file); err != nil {
-		return Ref{}, err
+		return Ref{}, fault.Write(err)
 	}
 	pending, err := os.CreateTemp(filepath.Dir(file), ".pending-*.pfo")
 	if err != nil {
-		return Ref{}, err
+		return Ref{}, fault.Write(err)
 	}
 	name := pending.Name()
 	defer os.Remove(name)
@@ -221,16 +225,22 @@ func (s *Store) put(kind byte, payload []byte, size int64) (Ref, error) {
 	}
 	closeErr := pending.Close()
 	if err != nil {
-		return Ref{}, err
+		return Ref{}, fault.Write(err)
 	}
 	if closeErr != nil {
-		return Ref{}, closeErr
+		return Ref{}, fault.Write(closeErr)
 	}
 	// Hard-link publication is atomic and cannot overwrite an existing immutable object.
 	if err = os.Link(name, file); err != nil {
 		existing, readErr := s.read(ref.Hash)
-		if readErr != nil || !bytes.Equal(existing, data) {
-			return Ref{}, fmt.Errorf("publish object: %w", err)
+		if readErr != nil {
+			if !errors.Is(readErr, os.ErrNotExist) {
+				return Ref{}, fault.Read(readErr)
+			}
+			return Ref{}, fault.Wrap(fault.StorageIO, "無法發布內容物件", err)
+		}
+		if !bytes.Equal(existing, data) {
+			return Ref{}, fault.New(fault.StorageCorrupt, "object collision")
 		}
 	}
 	return ref, nil

@@ -93,6 +93,10 @@ Catalog 每次新增物件時重寫有界集合；這避免許多小檔案開啟
 
 後續舊書 migration 須另外建立新索引、逐版還原／VAX 比對、保留原始檔及回滾備份；本輪沒有對私人書庫做批次轉換。只有原有 ID 與 legacy SAI 被保留；新的 root 型正式事件、owner／cardInstanceId／新鏈及發布事件沿用各自待實作合約。
 
+## 錯誤回應
+
+物件／版本轉接層已使用 typed code：缺失依賴、完整性失敗、容量限制、未知格式、路徑限制及讀寫失敗各自分類；API 保留可讀 error 並新增 code。必要物件缺失不當作文件 404，底層原因仍可 errors.Is／errors.As 辨認，公開訊息不帶本機路徑。暖讀驗證與候選發布失敗沿用同一合約，格式／VAX hash 不變；[完整代碼與相容規則](API_ERRORS.md)。
+
 ## 驗收
 
 測試覆蓋精確 Unicode／換行往返、依內容分塊的文首插入共用、重送同內容不增加物件、正文／筆記型別隔離、有序子項與錯長度、空正文、容量／物件數、錯 hash／缺依賴／mtime 恢復、root 置換與 VAX 不符、原檔及版本不被改寫、還原共用、筆記切片隔離、布局只取筆記、新設定不改舊書、改設定後仍讀新書，以及超量發布失敗仍保留舊 head。
@@ -102,4 +106,4 @@ Catalog 每次新增物件時重寫有界集合；這避免許多小檔案開啟
 Go HTTP 測試使用預設的新匯入格式；原 Web golden fixture、舊儲存回歸及既有長文診斷探針明確保持 legacy，避免混淆原基準。相同文本／40 版的效能對照使用 BenchmarkObjectHistory，結果見 [物件儲存基準](experiments/CONTENT_OBJECTS.md)。
 
 
-本機驗收：Go 全套測試及 vet、Go Windows sidecar 編譯、Dart 格式檢查（0 修改）、Flutter analyze 均通過；Flutter 48 項測試通過，1 項需 opt-in 的長文 UI 探針未啟用。Windows 連結目錄回歸因環境無建立 symlink 權限而跳過，尚須在支援環境補驗；不能把此項算成已驗收。失敗超量提交後，未引用集合內容不影響舊 head 的冷／暖讀取，另有回歸測試。
+本機驗收：Go 全套測試及 vet、Go Windows sidecar 編譯、Dart 格式檢查（0 修改）、Flutter analyze 均通過；Flutter 51 項測試通過（含錯誤代碼回歸），1 項需 opt-in 的長文 UI 探針未啟用。Windows 連結目錄回歸因環境無建立 symlink 權限而跳過，尚須在支援環境補驗；不能把此項算成已驗收。失敗超量提交後，未引用集合內容不影響舊 head 的冷／暖讀取，另有回歸測試。

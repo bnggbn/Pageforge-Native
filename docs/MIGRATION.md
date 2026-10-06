@@ -20,6 +20,7 @@
 - 精簡 reader HTTP 投影、舊草稿按需取基準版本、內容雜湊驗證快取、單檔／整本歷史讀取限制、批次匯入索引與完整 HTTP deadline；[版本儲存評估](VERSION_STORAGE.md)。
 - 線索牆圖釘移動只重繪紅線，卡片只更新活動位置；關係標籤重用排版並釋放，不繪製視窗外紅線。
 - 新匯入書預設 objects-v1：依內容分塊的正文樹、獨立筆記 blob、物件去重及有界驗證；正式 VAX 維持還原全文雜湊，舊書不遷移，配置／架構見 [內容物件](CONTENT_OBJECTS.md)。尚未提供操作式編輯、分章 API、差異復原或 root 型正式事件。
+- 後端 typed 錯誤代碼、code／error JSON、必要依賴缺失／完整性／容量／I/O 分流、Flutter 共用解析與舊回應相容；草稿 CAS 以代碼判斷，正式並行新鏈尚未實作；[錯誤合約與本輪結論](API_ERRORS.md)。
 - Go 自動測試與 vet、Flutter analyze／測試、Windows release 建置。
 
 ## 接續移植

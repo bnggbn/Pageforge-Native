@@ -17,10 +17,11 @@ abstract class DesignRepository {
 }
 
 class HttpDesignRepository implements DesignRepository {
-  HttpDesignRepository(this.origin, this.token);
+  HttpDesignRepository(this.origin, this.token, {http.Client? client})
+    : _client = client ?? http.Client();
   final Uri origin;
   final String token;
-  final _client = http.Client();
+  final http.Client _client;
   Future<DesignSnapshot> _request(String method, [Object? body]) async {
     final abort = Completer<void>();
     final request = http.AbortableRequest(
@@ -41,8 +42,7 @@ class HttpDesignRepository implements DesignRepository {
       maxBytes: 1024 * 1024,
     );
     if (response.statusCode >= 400) {
-      final json = jsonDecode(response.body);
-      throw ApiException('${json['error']}', response.statusCode);
+      throw ApiException.decodeResponse(response.body, response.statusCode);
     }
     final json = jsonDecode(response.body);
     return DesignSnapshot(

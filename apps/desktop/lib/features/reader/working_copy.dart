@@ -98,7 +98,7 @@ class WorkingCopy extends ChangeNotifier {
           try {
             saved = await repository.saveDraft(copy, _version);
           } on ApiException catch (e) {
-            if (e.status != 409) rethrow;
+            if (!e.isConflict) rethrow;
             _id = newId();
             copy['id'] = _id;
             saved = await repository.saveDraft(copy, null);

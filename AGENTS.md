@@ -8,6 +8,7 @@ Windows first. Flutter/Dart owns UI; Go owns library, document rules, VAX and pe
 - The VAX encoder must match vax-sdk 1.0.0, including escaped non-ASCII UTF-16 bytes.
 - Use temporary/synthetic libraries in tests. Do not mutate real user books.
 - Never log the sidecar token. Listen on loopback and authenticate every API request.
+- New errors crossing an API boundary use internal/fault codes; HTTP returns code + error. Preserve errors.Is/errors.As causes, classify required missing storage separately from missing resources, and never branch on message text. See docs/API_ERRORS.md.
 - Dart dependencies use Flutter Pub; backend dependencies use Go Modules. No Node runtime.
 - Keep UI styling with its widgets; share theme tokens in ui/theme.dart.
 - Update README capability table and docs/MIGRATION.md when a feature moves from planned to implemented.

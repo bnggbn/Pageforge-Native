@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -22,7 +23,7 @@ func migrateEvidence(w model.EvidenceWall) model.EvidenceWall {
 // Reading only exposes migration in memory. First successful write keeps a V1 backup.
 func (s *Store) backupEvidenceV1(id, file string) error {
 	data, err := readBounded(file, int64(s.config.EvidenceWall.LayoutMiB)*1024*1024)
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
@@ -41,7 +42,7 @@ func (s *Store) backupEvidenceV1(id, file string) error {
 	}
 	if _, err = os.Stat(backup); err == nil {
 		return nil
-	} else if !os.IsNotExist(err) {
+	} else if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	stream, err := os.OpenFile(backup, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)

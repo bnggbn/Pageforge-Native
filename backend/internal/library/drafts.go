@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,7 +27,7 @@ func (s *Store) drafts(id string) ([]model.Draft, error) {
 		return nil, err
 	}
 	entries, err := os.ReadDir(folder)
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return []model.Draft{}, nil
 	}
 	if err != nil {
@@ -100,7 +101,7 @@ func (s *Store) SaveDraft(id string, copy model.Draft, expectedVersion *string) 
 			return copy, ErrConflict
 		}
 	} else {
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return copy, err
 		}
 		if expectedVersion != nil {

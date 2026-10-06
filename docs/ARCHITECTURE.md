@@ -18,11 +18,14 @@ backend/
   internal/model/            library 相容的資料模型
   internal/library/          檔案邊界、匯入、版本、草稿與進度
   internal/content/          typed hash 物件、正文樹、有界集合與依賴驗證
+  internal/fault/            穩定錯誤代碼、原因鏈；不依賴 HTTP
   internal/vax/              vax-sdk 1.0.0 的 canonical bytes 與 SHA-256 協定
   internal/design/           嚴格外觀 JSON、revision 衝突檢查與原子保存
   internal/compare/          有輸入上限與 deadline 的文字 diff
   internal/api/              本機 API 與請求驗證
 ```
+
+儲存／版本來源以 typed fault 提供代碼與原始 cause，API 集中轉換 HTTP status／code／公開 error，Dart ApiException 保留 code。錯誤與成功資料的解析分開，401／403／routing 404／405 也使用 JSON；暖讀錯誤不以快取掩蓋。合約與相容界線見 [錯誤代碼](API_ERRORS.md)。
 
 Widget 不直接操作 library。ViewModel 依赖 repository 合約，Go 的儲存與 VAX 分開。
 working copy、reading position 與 evidence wall 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。

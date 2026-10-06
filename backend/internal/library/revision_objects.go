@@ -2,10 +2,10 @@ package library
 
 import (
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
 )
@@ -33,46 +33,46 @@ func (s *Store) objectStore(folder string) (*content.Store, error) {
 func (s *Store) writeRevision(folder, format string, revision model.Revision) error {
 	relative, err := filepath.Rel(s.root, folder)
 	if err != nil {
-		return err
+		return fault.Read(err)
 	}
 	file, err := s.safe(relative, "versions", revision.ID+".json")
 	if err != nil {
-		return err
+		return fault.Read(err)
 	}
 	if format == "" {
 		return atomicJSON(file, revision)
 	}
 	if format != objectRevisionFormat {
-		return fmt.Errorf("unsupported revision storage")
+		return fault.New(fault.UnsupportedStorage, "unsupported revision storage")
 	}
 	objects, err := s.objectStore(folder)
 	if err != nil {
-		return err
+		return fault.Read(err)
 	}
 	text, err := objects.PutText(revision.Content)
 	if err != nil {
-		return err
+		return fault.Read(err)
 	}
 	data, err := json.Marshal(revision.Notes)
 	if err != nil {
-		return err
+		return fault.Encode(err)
 	}
 	notes, err := objects.PutNotes(data)
 	if err != nil {
-		return err
+		return fault.Read(err)
 	}
 	if err = objects.Flush(); err != nil {
-		return err
+		return fault.Read(err)
 	}
 	revision.Content = ""
 	revision.Notes = nil
 	record := objectRevision{StorageVersion: 1, Revision: revision, ContentRoot: text, NotesRoot: notes}
 	encoded, err := json.Marshal(record)
 	if err != nil {
-		return err
+		return fault.Encode(err)
 	}
 	if int64(len(encoded)) > int64(s.config.Storage.RecordMiB)*1024*1024 {
-		return fmt.Errorf("版本資料超過讀取容量")
+		return fault.New(fault.LimitExceeded, "版本資料超過讀取容量")
 	}
 	return atomicJSON(file, record)
 }
@@ -80,10 +80,16 @@ func (s *Store) writeRevision(folder, format string, revision model.Revision) er
 func decodeObjectRevision(data []byte, id string) (objectRevision, error) {
 	var record objectRevision
 	if err := json.Unmarshal(data, &record); err != nil {
-		return record, err
+		return record, fault.Read(err)
 	}
-	if record.StorageVersion != 1 || record.Revision.ID != id || record.Revision.Content != "" || record.Revision.Notes != nil {
-		return record, fmt.Errorf("invalid object revision record")
+	if record.StorageVersion < 1 {
+		return record, fault.New(fault.StorageCorrupt, "missing object revision storage version")
+	}
+	if record.StorageVersion != 1 {
+		return record, fault.New(fault.UnsupportedStorage, "unsupported revision storage version")
+	}
+	if record.Revision.ID != id || record.Revision.Content != "" || record.Revision.Notes != nil {
+		return record, fault.New(fault.StorageCorrupt, "invalid object revision record")
 	}
 	return record, nil
 }
@@ -92,43 +98,43 @@ func decodeObjectRevision(data []byte, id string) (objectRevision, error) {
 func (s *Store) revisionNotes(m model.Manifest, id string) ([]model.Note, error) {
 	file, err := s.safe("books", m.Document.ID, "versions", id+".json")
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	if m.RevisionStorage == "" {
 		var revision model.Revision
 		if err = s.readJSON(file, &revision); err != nil {
-			return nil, err
+			return nil, fault.Read(err)
 		}
 		return revision.Notes, nil
 	}
 	data, err := readBounded(file, int64(s.config.Storage.RecordMiB)*1024*1024)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	record, err := decodeObjectRevision(data, id)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	folder, err := s.safe("books", m.Document.ID)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	objects, err := s.objectStore(folder)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	session := objects.Session(int64(s.config.Storage.HistoryMiB)*1024*1024, s.config.Storage.ObjectCount)
 	payload, err := session.Notes(record.NotesRoot, int64(s.config.Limits.SnapshotNotesMiB)*1024*1024)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	var notes []model.Note
 	if err = json.Unmarshal(payload, &notes); err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	canonical, err := vax.Canonical(notes)
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	var envelope struct {
 		SDTO struct {
@@ -136,10 +142,10 @@ func (s *Store) revisionNotes(m model.Manifest, id string) ([]model.Note, error)
 		} `json:"sdto"`
 	}
 	if err = json.Unmarshal([]byte(record.Revision.Envelope), &envelope); err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	if vax.Hash([]byte(canonical)) != envelope.SDTO.NotesHash {
-		return nil, fmt.Errorf("筆記內容與版本承諾不一致")
+		return nil, fault.New(fault.StorageCorrupt, "筆記內容與版本承諾不一致")
 	}
 	return notes, nil
 }

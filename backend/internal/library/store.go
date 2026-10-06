@@ -13,11 +13,12 @@ import (
 	"sync"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/config"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
 )
 
-var ErrConflict = errors.New("版本已更新，請重新載入後比較；目前輸入仍保留")
+var ErrConflict = fault.New(fault.Conflict, "版本已更新，請重新載入後比較；目前輸入仍保留")
 var uuid = regexp.MustCompile(`(?i)^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
 var extensions = map[string]string{"markdown": "md", "text": "txt", "pdf": "pdf", "epub": "epub", "xlsx": "xlsx"}
 
@@ -34,7 +35,7 @@ func Open(c config.Config) (*Store, error) {
 	s := &Store{root: c.Paths.LibraryRoot, config: c}
 	if stat, err := os.Lstat(s.root); err == nil && stat.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("library 根目錄不可為連結")
-	} else if err != nil && !os.IsNotExist(err) {
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 	for _, folder := range []string{"books", "collection", ".pageforge", ".trash"} {
@@ -82,16 +83,26 @@ func (s *Store) manifest(id string) (model.Manifest, error) {
 		return m, err
 	}
 	if err = s.readJSON(file, &m); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			if _, folderErr := os.Lstat(filepath.Dir(file)); errors.Is(folderErr, os.ErrNotExist) {
+				return m, fault.Wrap(fault.NotFound, "文件不存在", err)
+			}
+		}
 		return m, err
 	}
-	if (m.RevisionStorage != "" && m.RevisionStorage != objectRevisionFormat) ||
-		m.Document.ID != id || extensions[m.Document.Format] == "" ||
-		m.OriginalFile != "original."+extensions[m.Document.Format] || len(m.RevisionIDs) == 0 || len(m.RevisionIDs) > s.config.Limits.RevisionCount {
-		return m, fmt.Errorf("文件 manifest 無效")
+	if m.RevisionStorage != "" && m.RevisionStorage != objectRevisionFormat {
+		return m, fault.New(fault.UnsupportedStorage, "unsupported manifest revision storage")
+	}
+	if len(m.RevisionIDs) > s.config.Limits.RevisionCount {
+		return m, fault.New(fault.LimitExceeded, "版本數超過設定上限")
+	}
+	if m.Document.ID != id || extensions[m.Document.Format] == "" ||
+		m.OriginalFile != "original."+extensions[m.Document.Format] || len(m.RevisionIDs) == 0 {
+		return m, fault.New(fault.StorageCorrupt, "文件 manifest 無效")
 	}
 	for _, revision := range m.RevisionIDs {
 		if !uuid.MatchString(revision) {
-			return m, fmt.Errorf("版本 ID 無效")
+			return m, fault.New(fault.StorageCorrupt, "版本 ID 無效")
 		}
 	}
 	return m, nil
@@ -156,19 +167,19 @@ func (s *Store) readBook(id string) (model.Book, error) {
 		consumed += int64(len(data))
 		appendFingerprint(loadedDigest, data)
 		if err = json.Unmarshal(data, &revision); err != nil {
-			return b, err
+			return b, fault.Read(err)
 		}
 		if revision.ID != revisionID {
-			return b, fmt.Errorf("版本檔名不一致")
+			return b, fault.New(fault.StorageCorrupt, "版本檔名不一致")
 		}
 		b.Revisions = append(b.Revisions, revision)
 	}
 	if err = vax.Verify(b.Document, source, b.Revisions); err != nil {
-		return b, err
+		return b, fault.Ensure(fault.StorageCorrupt, "VAX 歷史驗證失敗", err)
 	}
 	// The cache key must identify the exact bytes passed to VAX, including external-write races.
 	if key != hex.EncodeToString(loadedDigest.Sum(nil)) {
-		return b, fmt.Errorf("歷史在驗證時被外部修改，請重新載入")
+		return b, fault.New(fault.StorageCorrupt, "歷史在驗證時被外部修改，請重新載入")
 	}
 	if size <= int64(s.config.Storage.VerifiedCacheMiB)*1024*1024 {
 		s.cacheMu.Lock()
@@ -187,7 +198,7 @@ func (s *Store) List() ([]model.Summary, error) { s.mu.RLock(); defer s.mu.RUnlo
 func (s *Store) list() ([]model.Summary, error) {
 	entries, err := os.ReadDir(filepath.Join(s.root, "books"))
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	result := []model.Summary{}
 	for _, entry := range entries {
@@ -220,7 +231,7 @@ func (s *Store) progress(m model.Manifest) *model.Position {
 		err = json.Unmarshal(data, &value)
 	}
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return m.Progress
 		}
 		return nil

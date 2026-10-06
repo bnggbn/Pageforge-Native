@@ -2,15 +2,16 @@ package design
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 )
 
-var ErrConflict = errors.New("外觀已被其他視窗修改，請重新載入後再套用")
+var ErrConflict = fault.New(fault.Conflict, "外觀已被其他視窗修改，請重新載入後再套用")
 
 type Store struct {
 	root string

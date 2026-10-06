@@ -1,12 +1,12 @@
 package library
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
 )
@@ -23,7 +23,7 @@ func (s *Store) Import(filename string, source []byte) (string, bool, error) {
 func (s *Store) importIndex() (map[string]string, error) {
 	entries, err := os.ReadDir(filepath.Join(s.root, "books"))
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	index := map[string]string{}
 	for _, entry := range entries {
@@ -40,7 +40,7 @@ func (s *Store) importIndex() (map[string]string, error) {
 }
 func (s *Store) importWithIndex(filename string, source []byte, index map[string]string) (string, bool, error) {
 	if filename != filepath.Base(filename) || strings.ContainsAny(filename, "\\\x00") {
-		return "", false, fmt.Errorf("檔名無效")
+		return "", false, fault.New(fault.InvalidRequest, "檔名無效")
 	}
 	extension := strings.ToLower(filepath.Ext(filename))
 	format := ""
@@ -50,12 +50,15 @@ func (s *Store) importWithIndex(filename string, source []byte, index map[string
 		format = "text"
 	}
 	if format == "" {
-		return "", false, fmt.Errorf("此階段匯入支援 Markdown／TXT；其他格式可讀取既有 library 投影")
+		return "", false, fault.New(fault.InvalidRequest, "此階段匯入支援 Markdown／TXT；其他格式可讀取既有 library 投影")
 	}
 	text := strings.TrimPrefix(string(source), "\ufeff")
-	if len(source) == 0 || len(source) > s.config.Limits.TextMiB*1024*1024 || !utf8.Valid(source) ||
+	if len(source) > s.config.Limits.TextMiB*1024*1024 {
+		return "", false, fault.New(fault.LimitExceeded, "文件超過設定容量")
+	}
+	if len(source) == 0 || !utf8.Valid(source) ||
 		strings.TrimSpace(text) == "" || strings.ContainsRune(text, 0) {
-		return "", false, fmt.Errorf("需為非空白 UTF-8 文字，且不可超過設定容量")
+		return "", false, fault.New(fault.InvalidRequest, "需為非空白 UTF-8 文字，且不可超過設定容量")
 	}
 	hash := vax.Hash(source)
 	if id, found := index[format+":"+hash]; found {
@@ -74,11 +77,11 @@ func (s *Store) importWithIndex(filename string, source []byte, index map[string
 	booksDir := filepath.Join(s.root, "books")
 	pending, err := os.MkdirTemp(booksDir, ".pending-")
 	if err != nil {
-		return "", false, err
+		return "", false, fault.Write(err)
 	}
 	defer os.RemoveAll(pending)
 	if err = os.Mkdir(filepath.Join(pending, "versions"), 0700); err != nil {
-		return "", false, err
+		return "", false, fault.Write(err)
 	}
 	original := "original." + extensions[format]
 	if err = writeSource(filepath.Join(pending, original), source); err != nil {
@@ -104,7 +107,7 @@ func (s *Store) importWithIndex(filename string, source []byte, index map[string
 		}
 	}
 	if err = os.Rename(pending, filepath.Join(booksDir, id)); err != nil {
-		return "", false, err
+		return "", false, fault.Write(err)
 	}
 	index[format+":"+hash] = id
 	return id, false, nil
@@ -118,7 +121,7 @@ func (s *Store) SyncCollection() (int, error) {
 	}
 	entries, err := os.ReadDir(filepath.Join(s.root, "collection"))
 	if err != nil {
-		return 0, err
+		return 0, fault.Read(err)
 	}
 	count := 0
 	for _, entry := range entries {

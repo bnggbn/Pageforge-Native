@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/compare"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/library"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 )
@@ -21,7 +22,7 @@ func (s *Server) importBook(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := base64.StdEncoding.DecodeString(input.Source)
 	if err != nil {
-		respond(w, nil, err)
+		respond(w, nil, fault.Wrap(fault.InvalidRequest, "文件來源編碼無效", err))
 		return
 	}
 	id, duplicate, err := s.Store.Import(input.Filename, bytes)

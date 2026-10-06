@@ -3,8 +3,9 @@ package content
 import (
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
 	"unicode/utf8"
+
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 )
 
 // The fixed table and algorithm are part of PFCO version 1, not runtime configuration.
@@ -25,7 +26,7 @@ var gear = func() [256]uint64 {
 // but this full-text API does not promise logarithmic edit processing.
 func (s *Store) PutText(text string) (Ref, error) {
 	if !utf8.ValidString(text) {
-		return Ref{}, fmt.Errorf("text must be UTF-8")
+		return Ref{}, fault.New(fault.InvalidRequest, "text must be UTF-8")
 	}
 	leaves := []Ref{}
 	start, cursor := 0, 0

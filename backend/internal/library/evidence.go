@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,7 +24,7 @@ func (s *Store) evidence(id string) (model.EvidenceWall, error) {
 		return wall, err
 	}
 	stream, err := os.Open(file)
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return migrateEvidence(wall), nil
 	}
 	if err != nil {

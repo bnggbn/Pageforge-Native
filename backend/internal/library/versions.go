@@ -2,11 +2,11 @@ package library
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
 )
@@ -31,10 +31,10 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 		return b, ErrConflict
 	}
 	if len(b.Revisions) >= s.config.Limits.RevisionCount {
-		return b, fmt.Errorf("版本數已達設定上限")
+		return b, fault.New(fault.LimitExceeded, "版本數已達設定上限")
 	}
 	if input.Kind != "edit" && input.Kind != "note" && input.Kind != "restore" {
-		return b, fmt.Errorf("此階段支援 edit／note／restore")
+		return b, fault.New(fault.InvalidRequest, "此階段支援 edit／note／restore")
 	}
 	content := input.Content
 	notes := input.Notes
@@ -50,15 +50,18 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 			}
 		}
 		if !found {
-			return b, fmt.Errorf("還原來源不在此主線")
+			return b, fault.New(fault.InvalidRequest, "還原來源不在此主線")
 		}
 	} else if input.RestoredFrom != nil {
-		return b, fmt.Errorf("此事件不可設定還原來源")
+		return b, fault.New(fault.InvalidRequest, "此事件不可設定還原來源")
 	}
 	editable := b.Format == "markdown" || b.Format == "text"
-	if !utf8.ValidString(content) || len(content) > s.config.Limits.TextMiB*1024*1024 ||
+	if len(content) > s.config.Limits.TextMiB*1024*1024 {
+		return b, fault.New(fault.LimitExceeded, "文字超過設定容量")
+	}
+	if !utf8.ValidString(content) ||
 		(editable && (strings.TrimSpace(content) == "" || strings.ContainsRune(content, 0))) || (!editable && content != "") {
-		return b, fmt.Errorf("文字格式或容量無效")
+		return b, fault.New(fault.InvalidRequest, "文字格式或容量無效")
 	}
 	if input.Kind == "note" {
 		content = head.Content
@@ -119,14 +122,14 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 func (s *Store) validateNotes(notes []model.Note) error {
 	encoded, err := json.Marshal(notes)
 	if err != nil || len(encoded) > s.config.Limits.SnapshotNotesMiB*1024*1024 {
-		return fmt.Errorf("筆記快照超過設定容量")
+		return fault.New(fault.LimitExceeded, "筆記快照超過設定容量")
 	}
 	seen := map[string]bool{}
 	for _, n := range notes {
 		if !uuid.MatchString(n.ID) || seen[n.ID] || strings.TrimSpace(n.Body) == "" ||
 			len([]rune(n.Body)) > s.config.Limits.NoteCharacters || len([]rune(n.Quote)) > s.config.Limits.QuoteCharacters ||
 			len([]rune(n.Location)) > s.config.Limits.LocationCharacters {
-			return fmt.Errorf("筆記內容或 ID 無效")
+			return fault.New(fault.InvalidRequest, "筆記內容或 ID 無效")
 		}
 		seen[n.ID] = true
 	}
@@ -144,7 +147,7 @@ func (s *Store) SaveProgress(id string, p model.Position) error {
 	}
 	if p.Section < 0 || math.IsNaN(p.Percentage) || math.IsInf(p.Percentage, 0) || math.IsNaN(p.Ratio) ||
 		math.IsInf(p.Ratio, 0) || p.Ratio < 0 || p.Ratio > 1 || p.Percentage < 0 || p.Percentage > 100 || len(p.Block) > 300 {
-		return fmt.Errorf("閱讀位置無效")
+		return fault.New(fault.InvalidRequest, "閱讀位置無效")
 	}
 	p.Epoch = m.ProgressEpoch
 	p.UpdatedAt = vax.Now()

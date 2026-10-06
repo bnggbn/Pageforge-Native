@@ -4,12 +4,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"hash"
 	"io"
 	"os"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 )
 
@@ -25,22 +25,25 @@ type verifiedBook struct {
 func (s *Store) historyFingerprint(m model.Manifest, original string) (string, int64, error) {
 	digest, err := historyDigest(m)
 	if err != nil {
-		return "", 0, err
+		return "", 0, fault.Read(err)
 	}
 	var total int64
 	buffer := make([]byte, 32*1024)
 	fingerprint := func(file string, limit int64) error {
 		stream, err := os.Open(file)
 		if err != nil {
-			return err
+			return fault.Read(err)
 		}
 		defer stream.Close()
 		stat, err := stream.Stat()
 		if err != nil {
-			return err
+			return fault.Read(err)
 		}
-		if !stat.Mode().IsRegular() || stat.Size() > limit {
-			return fmt.Errorf("歷史資料超過讀取容量或不是一般檔案")
+		if !stat.Mode().IsRegular() {
+			return fault.New(fault.StorageCorrupt, "歷史檔案不是一般檔案")
+		}
+		if stat.Size() > limit {
+			return fault.New(fault.LimitExceeded, "歷史資料超過讀取容量")
 		}
 		hash := sha256.New()
 		remaining := int64(s.config.Storage.HistoryMiB)*1024*1024 - total
@@ -49,29 +52,29 @@ func (s *Store) historyFingerprint(m model.Manifest, original string) (string, i
 		}
 		count, err := io.CopyBuffer(hash, io.LimitReader(stream, limit+1), buffer)
 		if err != nil {
-			return err
+			return fault.Read(err)
 		}
 		if count > limit {
-			return fmt.Errorf("整本歷史超過讀取容量；請調整 storage.historyMiB")
+			return fault.New(fault.LimitExceeded, "整本歷史超過讀取容量；請調整 storage.historyMiB")
 		}
 		total += count
 		digest.Write(hash.Sum(nil))
 		return nil
 	}
 	if err = fingerprint(original, int64(s.config.Limits.DocumentMiB)*1024*1024); err != nil {
-		return "", 0, err
+		return "", 0, fault.Read(err)
 	}
 	versions, err := s.safe("books", m.Document.ID, "versions")
 	if err != nil {
-		return "", 0, err
+		return "", 0, fault.Read(err)
 	}
 	for _, id := range m.RevisionIDs {
 		file, err := revisionPath(versions, id)
 		if err != nil {
-			return "", 0, err
+			return "", 0, fault.Read(err)
 		}
 		if err = fingerprint(file, int64(s.config.Storage.RecordMiB)*1024*1024); err != nil {
-			return "", 0, err
+			return "", 0, fault.Read(err)
 		}
 	}
 	return hex.EncodeToString(digest.Sum(nil)), total, nil
@@ -112,7 +115,7 @@ func historyDigest(m model.Manifest) (hash.Hash, error) {
 		IDs      []string
 	}{m.RevisionStorage, m.Document, m.RevisionIDs})
 	if err != nil {
-		return nil, err
+		return nil, fault.Read(err)
 	}
 	digest := sha256.New()
 	digest.Write(encoded)
