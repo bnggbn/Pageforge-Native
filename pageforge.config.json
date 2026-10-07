@@ -41,7 +41,8 @@
     "draftDebounceMs": 500,
     "sheetRowHeightPx": 40,
     "sheetOverscanRows": 6,
-    "pdfMaxPage": 100000
+    "pdfMaxPage": 100000,
+    "editorSectionUnits": 16000
   },
   "diff": {
     "maxCharacters": 1048576,

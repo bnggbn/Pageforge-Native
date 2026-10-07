@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../data/ids.dart';
 import '../../data/library_repository.dart';
 import '../../data/models.dart';
+import 'sectioned_draft.dart';
 
 class WorkingCopy extends ChangeNotifier {
   WorkingCopy(this.repository, this.debounce);
@@ -16,11 +17,26 @@ class WorkingCopy extends ChangeNotifier {
   Timer? _timer;
   bool _disposed = false, _discarding = false;
   String status = 'saved', error = '';
-  String get content => _values['content'] as String? ?? '';
+  String get content => _text(_values['content']);
+  static String _text(Object? value) =>
+      value is SectionedDraft ? value.text : value as String? ?? '';
+  SectionedDraft editSections(int units) {
+    final value = _values['content'];
+    return value is SectionedDraft
+        ? value
+        : SectionedDraft(_text(value), sectionUnits: units);
+  }
+
   String get body => _values['body'] as String? ?? '';
   String get quote => _values['quote'] as String? ?? '';
   String get location => _values['location'] as String? ?? '全文筆記';
-  bool get dirty => content != _book.head.content;
+  bool get dirty {
+    final value = _values['content'];
+    return value is SectionedDraft
+        ? !value.matches(_book.head.content)
+        : value != _book.head.content;
+  }
+
   bool get hasDraft =>
       dirty || body.isNotEmpty || quote.isNotEmpty || location != '全文筆記';
   bool get pending => !identical(_values, _saved);
@@ -68,8 +84,9 @@ class WorkingCopy extends ChangeNotifier {
       status = 'saving';
       _notify();
       try {
+        final text = _text(values['content']);
         final clean =
-            values['content'] == _baseline &&
+            text == _baseline &&
             values['body'] == '' &&
             values['quote'] == '' &&
             values['location'] == '全文筆記';
@@ -92,7 +109,7 @@ class WorkingCopy extends ChangeNotifier {
             'body': values['body'],
             'quote': values['quote'],
             'location': values['location'],
-            if (values['content'] != _baseline) 'content': values['content'],
+            if (text != _baseline) 'content': text,
           };
           Json saved;
           try {

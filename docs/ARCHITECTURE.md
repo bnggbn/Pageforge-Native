@@ -28,6 +28,7 @@ backend/
 儲存／版本來源以 typed fault 提供代碼與原始 cause，API 集中轉換 HTTP status／code／公開 error，Dart ApiException 保留 code。錯誤與成功資料的解析分開，401／403／routing 404／405 也使用 JSON；暖讀錯誤不以快取掩蓋。合約與相容界線見 [錯誤代碼](API_ERRORS.md)。
 
 Widget 不直接操作 library。ViewModel 依赖 repository 合約，Go 的儲存與 VAX 分開。
+sectioned_draft.dart 保留原文固定範圍及 immutable 替換表；EditorView 只把目前節交給 TextField，WorkingCopy 在保存／明確取全文時才組合。範圍及字元保留，沒有在每次按鍵 join 全文；草稿／API 仍是全文，閱讀可視區與全文件操作模型待補。
 working copy、reading position 與 evidence wall 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。
 線索牆不建立全部卡片 Widget，只建立可視區及緩衝區內的卡片；紅線集中繪製，背景點格只繪製視窗大小。段落額外間距由外觀 JSON 控制；TXT／EPUB 在共用選取容器內保留實際分隔符並增加顯示 padding，尾端空行的版面高度獨立調整，避免雙算間距。TXT／EPUB 跨段複製由選取端點映射原文範圍，保留完整分隔字元。
 段落索引依內容雜湊快取查找並在排版改變後量測位置。Markdown 標題保留 inline 樣式並帶 header semantics，筆記依實際標題邊界裁切，不影響一般複製。卡片拖曳由獨立的瞬時幾何狀態更新位置與紅線，正文設 RepaintBoundary；只有位置改變的卡片重建，放開才通知持久模型及啟動保存防抖。圖釘指標使用獨立 ValueNotifier 只使 painter 重繪；標籤 TextPainter 由畫布快取並於移除／換色／dispose 釋放，紅線以保守 bounds 裁切（兩端在外但線穿過視窗仍繪製）。

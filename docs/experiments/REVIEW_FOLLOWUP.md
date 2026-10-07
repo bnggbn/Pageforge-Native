@@ -58,7 +58,7 @@ go test ./internal/library -run '^
 5. 持續輸入最大保存等待、可驗證差異復原與 crash 注入；目前仍停筆防抖保存完整草稿。
 6. catalog 整檔改寫、正式提交前後歷史驗證、局部樹更新／正式 root 型事件：先按實際收益排程，不搶在 UI 體驗之前。
 
-本輪完整驗收結果與 UI 對照將隨實際完成更新；不把歷史基準或外部 review 算成本次已重現。
+本輪 Go 全套測試、vet、Windows sidecar 編譯，Dart 格式、Flutter analyze 通過。Flutter 全套54項通過、1項 opt-in 長文探針在預設測試中跳過；另明確啟用全文 control／分節 editor 百萬字探針，各自通過。另覆蓋360px窄視窗導航、複製全文與精確保存、在途保存後再修改、保存失敗保留草稿及 Unicode／CRLF。沒有替換或重啟正在使用的程式；未做本輪完整 Flutter Windows release 建置、實際 IME／手機驗收。Windows symlink 權限限制仍待具權限環境補驗。
  -bench '^BenchmarkReaderSnapshotWorkloads
 
 1. UI 可視區閱讀排版與按章 API 優先；必須驗收 Markdown／TXT／EPUB 跨段落、畫面外全文選取、複製、重複段落筆記及閱讀進度。不能用互不相通的 SelectionArea 假裝完成。
@@ -73,6 +73,32 @@ go test ./internal/library -run '^
 ```
 
 Go 全套測試、vet 與 Windows sidecar 編譯通過；新程式編譯到忽略的預覽目錄，沒有替換／重啟正在使用的 app。一次早期全套測試遇到 Windows catalog rename 的 Access is denied；原因未確定，隔離及後續全套重跑皆通過。失敗保持舊 head 的預檢已有回歸，但本輪未完成 Windows 各發布階段的 crash／共享檔案故障注入，不把重跑成功當作修復了所有 I/O 失敗。
+
+## 本機 Flutter 編輯對照
+
+同一 Windows 機器、widget-test engine、Flutter3.41.7／Dart3.11.5、1200×900、DPR1、同一份 seed42 合成1M runes。UTF-8 1793969 bytes、UTF-16 1016245 units。以 abc5c7b 的全文 editor widget 做 opt-in control，兩邊都使用目前 theme／WorkingCopy／FakeRepository；這是排版控件對照，沒有重跑舊整個應用程式。
+
+| 診斷 | 全文 editor control | 分節 editor |
+| --- | --- | --- |
+| 首次 pump | 5978.0 ms | 652.7 ms |
+| idle pump | 22.2 ms | 10.0 ms |
+| 文尾追加一字（5次中位數） | 8378.2 ms | 59.6 ms |
+| 追加範圍（5次） | 4922.5–8546.3 ms | 53.7–70.4 ms |
+| 控件中的 UTF-16 units | 1016245 | 12354 |
+
+分節版先明確切到最後一節，耗時 194.5 ms，才在文尾追加。五次追加、第一次排版皆非 p95；沒有原生鍵盤／IME、release FPS、HTTP、背景草稿落盤、峰值記憶體驗收。已有報告與先前試跑數字保留各自範圍，不能挑最小值當固定延遲。完整個別 sample 見 JSON。
+
+在 apps/desktop/ 重跑同一支探針；control 再加 --dart-define=PAGEFORGE_PROBE_EDITOR_CONTROL=true：
+
+```powershell
+flutter test --no-pub test/large_document_probe_test.dart --dart-define=PAGEFORGE_LONG_DOCUMENT_PROBE=true --dart-define=PAGEFORGE_PROBE_CHARACTERS=1000000 --dart-define=PAGEFORGE_PROBE_VIEW=editor
+```
+
+編輯工作區是固定原文範圍與 immutable 替換表，按鍵只更新目前節；草稿／正式保存與明確複製全文時才組回原文。初始分節沿段落／換行，長行按 UTF-16 安全邊界切；CRLF、emoji、Markdown 原文完全保留。reading.editorSectionUnits 預設16000，Go 驗證1000–65536；它是編輯範圍，不是 storage 的 UTF-8 chunk。
+
+每節同一 TextField 可跨段落選取；Ctrl+A／拖曳／undo 作用於目前節，全文複製用工具列，跨節選取與全文件 undo 尚未做。分節不插入換行或改變保存內容。正在輸入的節可長大，沒有在 IME 組字中強行重切；超大貼上與長時間不離節仍需後續有界編輯模型。草稿仍是全文 JSON、API 仍傳全文，沒有操作式後端或定時差異復原。
+
+TextDocumentView／閱讀器選取維持完整佈局，原有 Markdown／TXT／EPUB 的跨段拖曳、畫面外 Ctrl+A／複製與筆記定位回歸仍通過；本輪未宣稱完成閱讀可視區排版、按章 API 或百萬字閱讀體驗。閱讀器是下一步優先項。
 
 ## 尚未解決與下一步
 

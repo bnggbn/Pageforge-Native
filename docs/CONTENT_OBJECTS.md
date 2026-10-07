@@ -1,6 +1,6 @@
 # 內容物件與版本儲存架構
 
-第一階段已實作新匯入書的正文樹、獨立筆記 blob、物件共用及版本讀寫。操作式編輯、按章 API／虛擬排版、差異復原、正式 VAX root 事件、衝突新鏈、卡片發布與舊書遷移仍待完成。
+第一階段已實作新匯入書的正文樹、獨立筆記 blob、物件共用及版本讀寫。已有分節編輯與目前快照讀取；操作式後端、按章 API／可視區閱讀排版、差異復原、正式 VAX root 事件、衝突新鏈、卡片發布與舊書遷移仍待完成。
 
 ## 資料流與階段
 
@@ -79,7 +79,7 @@ Go LoadHistory／CommitHistory 及未帶 view=reader 的舊 HTTP 介面保留完
 
 Catalog 每次新增物件時重寫有界集合；這避免許多小檔案開啟，但發布仍有集合寫入放大，尚非 append pack。正式提交仍完整驗證候選歷史，保存延遲未在本輪 benchmark 量測。後續 pack 索引／append／GC 須另外設計與故障驗收。
 
-目前 API 仍傳目前全文，Flutter 仍全文 TextField／Markdown 排版。這一階段不解決百萬字輸入延遲；下一階段要把文字操作、分章讀取與可視區排版接進來，同時保留跨段落／全選／複製。
+目前 API／草稿仍傳與存全文。Flutter 編輯已改為可配置的分節 TextField＋替換表，按鍵不 join 全文；同機百萬字 editor control 對照與選取界線見 [review 報告](experiments/REVIEW_FOLLOWUP.md)。閱讀器仍完整 Markdown 排版；按章 API／可視區排版、全文件操作模型與跨節編輯選取待補，不宣稱已完成百萬字整體驗收。
 
 ## 配置、相容與遷移
 
@@ -98,6 +98,8 @@ Catalog 每次新增物件時重寫有界集合；這避免許多小檔案開啟
 舊書沒有 revisionStorage 欄位，繼續按 legacy 全文 JSON 讀寫，不改寫原版本、SAI 或備份。新書記錄格式後，即使全域改回 legacy，該書仍使用 objects-v1；新舊格式可同庫存在。既有來源去重仍生效，重新匯入完全相同原檔不會偷偷遷移舊書。舊 Web／舊 Native 不支援新物件格式；要給舊程式用，需未來顯式匯出完整 legacy 書庫，不能只刪 marker 或切設定降版。
 
 後續舊書 migration 須另外建立新索引、逐版還原／VAX 比對、保留原始檔及回滾備份；本輪沒有對私人書庫做批次轉換。只有原有 ID 與 legacy SAI 被保留；新的 root 型正式事件、owner／cardInstanceId／新鏈及發布事件沿用各自待實作合約。
+
+reading.editorSectionUnits 控制 Flutter 初始編輯節的 UTF-16 大小：預設16000，1000–65536；和儲存 UTF-8 chunk 不同。停筆草稿仍保存全文，不增加正式 VAX 節點。
 
 ## 錯誤回應
 

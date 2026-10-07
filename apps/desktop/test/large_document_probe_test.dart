@@ -9,11 +9,13 @@ import 'package:pageforge/features/reader/views/text_document_view.dart';
 import 'package:pageforge/ui/theme.dart';
 
 import 'fake_repository.dart';
+import 'support/legacy_editor_control.dart';
 
 // Diagnostic wall times in the widget-test engine. Not native release FPS or RSS.
 // Run one size/view per process to bound resource use and isolate large layouts.
 void main() {
   const enabled = bool.fromEnvironment('PAGEFORGE_LONG_DOCUMENT_PROBE');
+  const editorControl = bool.fromEnvironment('PAGEFORGE_PROBE_EDITOR_CONTROL');
   const characters = int.fromEnvironment(
     'PAGEFORGE_PROBE_CHARACTERS',
     defaultValue: 100000,
@@ -44,6 +46,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final samples = <String, Object>{
         'view': view,
+        'editorControl': editorControl,
         'characters': content.runes.length,
         'utf8Bytes': utf8.encode(content).length,
         'utf16Units': content.length,
@@ -54,7 +57,9 @@ void main() {
           theme: pageforgeTheme(),
           home: Scaffold(
             body: view == 'editor'
-                ? EditorView(model: model)
+                ? (editorControl
+                      ? LegacyEditorView(model: model)
+                      : EditorView(model: model))
                 : TextDocumentView(
                     content: content,
                     markdown: view == 'markdown',
@@ -70,7 +75,14 @@ void main() {
       await tester.pump();
       samples['idlePumpMs'] = clock.elapsedMicroseconds / 1000;
       if (view == 'editor') {
+        if (find.byTooltip('最後一節').evaluate().isNotEmpty) {
+          clock.reset();
+          await tester.tap(find.byTooltip('最後一節'));
+          await tester.pump();
+          samples['openLastSectionMs'] = clock.elapsedMicroseconds / 1000;
+        }
         final field = tester.widget<TextField>(find.byType(TextField));
+        samples['activeSectionUnits'] = field.controller!.text.length;
         final controller = field.controller!;
         final edits = <double>[];
         for (var i = 0; i < 5; i++) {

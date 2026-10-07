@@ -18,10 +18,12 @@ func TestContentObjectConfiguration(t *testing.T) {
 	c, err := Load(root)
 	if err != nil || c.Storage.RevisionFormat != "objects-v1" ||
 		c.Storage.ObjectCount != 100000 || c.Storage.InlineObjectBytes != 65536 ||
-		c.Storage.ObjectCatalogMiB != 8 {
+		c.Storage.ObjectCatalogMiB != 8 || c.Reading.EditorSectionUnits != 16000 {
 		t.Fatal("object defaults", err)
 	}
 	invalid := []string{
+		`{"reading":{"editorSectionUnits":999}}`,
+		`{"reading":{"editorSectionUnits":65537}}`,
 		`{"storage":{"revisionFormat":"unknown"}}`,
 		`{"storage":{"objectCount":0}}`,
 		`{"storage":{"objectCount":1000001}}`,

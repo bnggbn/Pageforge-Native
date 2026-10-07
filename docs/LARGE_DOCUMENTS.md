@@ -1,6 +1,6 @@
 # 分層保存、VAX 完整性與大型文件（規劃）
 
-本文件補充 [版本儲存](VERSION_STORAGE.md) 與 [草稿復原](DRAFT_RECOVERY.md)。新匯入書已有正文物件樹、獨立筆記 blob 及去重讀寫，見 [內容物件架構](CONTENT_OBJECTS.md)。操作日誌、局部操作式更新、root 型正式 VAX 與大檔編輯模型仍待實作；不直接提高上限，也不改寫既有 VAX 歷史。
+本文件補充 [版本儲存](VERSION_STORAGE.md) 與 [草稿復原](DRAFT_RECOVERY.md)。新匯入書已有正文物件樹、獨立筆記 blob 及去重讀寫，見 [內容物件架構](CONTENT_OBJECTS.md)。編輯已接固定範圍的分節替換模型；操作日誌、局部操作式後端、root 型正式 VAX、全文件選取／undo 及可視區閱讀仍待實作；不直接提高上限，也不改寫既有 VAX 歷史。
 
 ## 保存分層
 
@@ -51,11 +51,11 @@ VAX envelope 本身不放全文，它記錄正文、筆記及視圖的雜湊與�
 | 300 萬個一般中文字 | 9,000,000 bytes，約 8.58 MiB，超過預設容量而拒絕 |
 | 放寬文字限制後的 100 個上述全文版本 | 僅正文約 858 MiB，未計 notes／JSON；現有 256 MiB 歷史總量限制會先阻擋載入 |
 | 全文 diff | 前後兩文合計最多 1,048,576 個 UTF-16 code units，且有時間上限 |
-| 目前 Flutter 編輯／閱讀 | 單一全文 TextEditingController／TextField、全文 Markdown 排版；沒有百萬字效能保證 |
+| 目前 Flutter 編輯／閱讀 | 編輯為可配置分節 TextField／替換表，保存時才組回全文；閱讀仍全文 Markdown 排版。沒有整體百萬字體驗保證 |
 
 字數換算只針對一般 3-byte 中文字元；ASCII、emoji、混合文字及 JSON 轉義成本不同。上述為容量算術，並非大檔實測結果。
 
-初步隔離量測與現有瓶頸見 [大型文件現況基準](experiments/LARGE_DOCUMENT_BASELINE.md)。原基準提交只增加 opt-in 探針；後續已完成新書的物件儲存第一階段，但大型文件 UI 重構尚未完成。新舊格式對照見 [物件儲存基準](experiments/CONTENT_OBJECTS.md)。
+初步隔離量測與現有瓶頸見 [大型文件現況基準](experiments/LARGE_DOCUMENT_BASELINE.md)。原基準提交只增加 opt-in 探針；後續已完成新書的物件儲存第一階段，本輪完成編輯的分節排版與按鍵替換表，閱讀可視區及完整 UI 大檔驗收仍未完成。新舊格式對照見 [物件儲存基準](experiments/CONTENT_OBJECTS.md)。
 
 ## 實作順序與驗收
 

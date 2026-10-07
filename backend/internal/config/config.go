@@ -46,6 +46,7 @@ type Config struct {
 		LocationCharacters int `json:"locationCharacters"`
 	} `json:"limits"`
 	Reading struct {
+		EditorSectionUnits int   `json:"editorSectionUnits"`
 		DefaultFontSize    int   `json:"defaultFontSize"`
 		FontSizes          []int `json:"fontSizes"`
 		ProgressDebounceMs int   `json:"progressDebounceMs"`
@@ -59,6 +60,7 @@ type Config struct {
 
 func Load(root string) (Config, error) {
 	var c Config
+	c.Reading.EditorSectionUnits = 16000
 	c.Transport.RequestTimeoutMs = 30000
 	c.Transport.ResponseMiB = 64
 	c.Storage.InlineObjectBytes = 65536
@@ -117,6 +119,9 @@ func Load(root string) (Config, error) {
 		c.EvidenceWall.CanvasHeight > 20000 ||
 		c.EvidenceWall.SaveDebounceMs < 100 {
 		return c, fmt.Errorf("線索牆設定無效")
+	}
+	if c.Reading.EditorSectionUnits < 1000 || c.Reading.EditorSectionUnits > 65536 {
+		return c, fmt.Errorf("編輯分節設定無效")
 	}
 	if c.Transport.RequestTimeoutMs < 1000 || c.Transport.RequestTimeoutMs > 120000 ||
 		c.Transport.ResponseMiB < 1 || c.Transport.ResponseMiB > 512 {

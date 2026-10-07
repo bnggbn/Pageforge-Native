@@ -38,5 +38,44 @@
       "allocationsPerOp": 4656
     }
   ],
-  "backendRuntimeCommit": "ed5f7d3"
+  "backendRuntimeCommit": "ed5f7d3",
+  "ui": {
+    "host": "Windows widget-test engine; Flutter 3.41.7 / Dart 3.11.5; 1200x900; DPR 1",
+    "scope": "Current theme/WorkingCopy; isolated synthetic repository; control editor copied from abc5c7b. One first-layout sample, five controller append samples; no native release FPS, IME, HTTP, autosave timings or RSS.",
+    "control": {
+      "view": "editor",
+      "editorControl": true,
+      "characters": 1000000,
+      "utf8Bytes": 1793969,
+      "utf16Units": 1016245,
+      "firstPumpMs": 5978.009,
+      "idlePumpMs": 22.215,
+      "activeSectionUnits": 1016245,
+      "appendPumpMs": [
+        8378.196,
+        8072.935,
+        8394.037,
+        8546.32,
+        4922.547
+      ]
+    },
+    "sections": {
+      "view": "editor",
+      "editorControl": false,
+      "characters": 1000000,
+      "utf8Bytes": 1793969,
+      "utf16Units": 1016245,
+      "firstPumpMs": 652.732,
+      "idlePumpMs": 9.988,
+      "openLastSectionMs": 194.5,
+      "activeSectionUnits": 12354,
+      "appendPumpMs": [
+        70.382,
+        70.298,
+        59.013,
+        53.704,
+        59.641
+      ]
+    }
+  }
 }
