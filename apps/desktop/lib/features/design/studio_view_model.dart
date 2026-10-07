@@ -30,10 +30,13 @@ class StudioViewModel extends ChangeNotifier {
     source = text;
     message = '';
     _timer?.cancel();
-    _timer = Timer(const Duration(milliseconds: 200), () => _parse());
+    _timer = Timer(const Duration(milliseconds: 200), () {
+      _previewSource();
+      notifyListeners();
+    });
   }
 
-  bool _parse() {
+  bool _previewSource() {
     try {
       final next = DesignDocument.parse(source);
       if (next.source != document.source) {
@@ -44,7 +47,6 @@ class StudioViewModel extends ChangeNotifier {
     } catch (e) {
       error = '$e';
     }
-    notifyListeners();
     return error.isEmpty;
   }
 
@@ -57,13 +59,7 @@ class StudioViewModel extends ChangeNotifier {
   void change(String group, String key, Object value) {
     _timer?.cancel();
     try {
-      final next = document.change(group, key, value);
-      if (next.source != document.source) {
-        _remember();
-        document = next;
-      }
-      source = document.source;
-      error = message = '';
+      _replace(document.change(group, key, value));
     } catch (e) {
       error = '$e';
     }
@@ -90,53 +86,63 @@ class StudioViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _replace(DesignDocument next) {
+    if (next.source != document.source) _remember();
+    document = next;
+    source = next.source;
+    error = message = '';
+  }
+
   void preset(Map<String, String> colors) {
     _timer?.cancel();
-    _remember();
-    for (final entry in colors.entries) {
-      document = document.change('theme', entry.key, entry.value);
+    try {
+      _replace(document.changeValues('theme', colors));
+    } catch (e) {
+      error = '$e';
     }
-    source = document.source;
-    error = message = '';
     notifyListeners();
   }
 
   void reset() {
     _timer?.cancel();
-    _remember();
-    document = DesignDocument.defaults;
-    source = document.source;
-    error = message = '';
+    _replace(DesignDocument.defaults);
     notifyListeners();
   }
 
   Future<void> reload() async {
+    if (busy || _disposed) return;
+    _timer?.cancel();
     busy = true;
     notifyListeners();
-    await live.load();
-    if (live.error.isEmpty) {
+    try {
+      await live.load();
+      if (_disposed) return;
+      error = live.error;
+      if (error.isNotEmpty) return;
       document = live.document;
       source = document.source;
       _undo.clear();
       _redo.clear();
-      error = '';
       message = '已載入保存的外觀';
-    } else {
-      error = live.error;
+    } finally {
+      busy = false;
+      if (!_disposed) notifyListeners();
     }
-    busy = false;
-    notifyListeners();
   }
 
   Future<bool> apply() async {
-    if (busy) return false;
+    if (busy || _disposed) return false;
     _timer?.cancel();
-    if (!_parse()) return false;
+    if (!_previewSource()) {
+      notifyListeners();
+      return false;
+    }
     busy = true;
     message = '';
     notifyListeners();
     try {
       await live.apply(document);
+      if (_disposed) return false;
       document = live.document;
       source = document.source;
       message = '已套用並保存，重開仍會使用這個外觀';
@@ -146,7 +152,7 @@ class StudioViewModel extends ChangeNotifier {
       return false;
     } finally {
       busy = false;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
     }
   }
 

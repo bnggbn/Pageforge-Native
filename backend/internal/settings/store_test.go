@@ -144,3 +144,20 @@ func TestMissingDependenciesAndByteBoundRevision(t *testing.T) {
 		t.Fatal("missing dependency misclassified", err)
 	}
 }
+
+func TestPublishFailureLeavesDefaultsReadable(t *testing.T) {
+	defaults, original := fixture(t)
+	store := New(original.defaults, filepath.Join(filepath.Dir(original.defaults), "missing", "local.json"), original.maxBytes)
+	before, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = store.Save(json.RawMessage(`{"new":true}`), before.Revision)
+	if code, _ := fault.CodeOf(err); code != fault.StorageIO {
+		t.Fatal("publish failure misclassified", err)
+	}
+	after, err := store.Load()
+	if err != nil || after.Revision != before.Revision || !bytes.Equal(after.Document, defaults) {
+		t.Fatal("failed publish changed stored settings", err)
+	}
+}

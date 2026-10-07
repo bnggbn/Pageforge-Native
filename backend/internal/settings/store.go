@@ -107,30 +107,34 @@ func (s *Store) Save(document json.RawMessage, expected string) (Snapshot, error
 	if current.Revision != expected {
 		return Snapshot{}, ErrConflict
 	}
-	// The temporary file must live beside the target for the final rename.
-	file, err := os.CreateTemp(filepath.Dir(s.override), ".pageforge-settings-*")
-	if err != nil {
-		return Snapshot{}, fault.Write(err)
-	}
-	temporary := file.Name()
-	defer os.Remove(temporary)
-	if _, err = file.Write(data); err == nil {
-		err = file.Sync()
-	}
-	closeErr := file.Close()
-	if err != nil {
-		return Snapshot{}, fault.Write(err)
-	}
-	if closeErr != nil {
-		return Snapshot{}, fault.Write(closeErr)
-	}
-	if err = os.Rename(temporary, s.override); err != nil {
+	if err = s.publish(data); err != nil {
 		return Snapshot{}, fault.Write(err)
 	}
 	return snapshot(data), nil
 }
 
+// publish writes beside the target, flushes, closes and then switches the file.
+func (s *Store) publish(data []byte) error {
+	file, err := os.CreateTemp(filepath.Dir(s.override), ".pageforge-settings-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(file.Name())
+	defer file.Close()
+	if _, err = file.Write(data); err != nil {
+		return err
+	}
+	if err = file.Sync(); err != nil {
+		return err
+	}
+	if err = file.Close(); err != nil {
+		return err
+	}
+	return os.Rename(file.Name(), s.override)
+}
+
+// snapshot takes ownership of a private read buffer or cloned save candidate.
 func snapshot(data []byte) Snapshot {
 	hash := sha256.Sum256(data)
-	return Snapshot{Document: bytes.Clone(data), Revision: hex.EncodeToString(hash[:])}
+	return Snapshot{Document: data, Revision: hex.EncodeToString(hash[:])}
 }

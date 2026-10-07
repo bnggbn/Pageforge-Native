@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:async';
 import '../../data/bounded_response.dart';
 import 'package:http/http.dart' as http;
-import '../../data/library_repository.dart';
+import '../../data/api_exception.dart';
 import 'design_document.dart';
 
 class DesignSnapshot {
-  DesignSnapshot(this.document, this.revision);
+  const DesignSnapshot(this.document, this.revision);
   final DesignDocument document;
   final String revision;
 }
@@ -47,7 +47,7 @@ class HttpDesignRepository implements DesignRepository {
     }
     final json = jsonDecode(response.body);
     return DesignSnapshot(
-      DesignDocument.parse(jsonEncode(json['document'])),
+      DesignDocument.fromJson(json['document']),
       json['revision'] as String,
     );
   }

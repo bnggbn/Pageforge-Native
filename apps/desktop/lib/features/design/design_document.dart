@@ -5,6 +5,8 @@ import '../../data/models.dart';
 class DesignDocument {
   DesignDocument._(this._json);
   final Json _json;
+  static const _groups = ['theme', 'library', 'reader'];
+  static final _color = RegExp(r'^#[0-9a-fA-F]{6}$');
   static const fonts = ['Georgia', 'Noto Serif TC', 'Microsoft JhengHei'];
   static const motifs = ['auto', 'rings', 'frames', 'waves', 'leaf', 'arch'];
   static final defaults = DesignDocument.parse(
@@ -15,18 +17,21 @@ class DesignDocument {
     if (utf8.encode(source).length > 16384) {
       throw const FormatException('外觀 JSON 超過 16 KiB');
     }
-    final value = jsonDecode(source);
+    return fromJson(jsonDecode(source));
+  }
+
+  static DesignDocument fromJson(Object? value) {
     if (value is! Json) throw const FormatException('外觀必須是 JSON 物件');
     _keys(value, ['schemaVersion', 'theme', 'library', 'reader'], 'root');
     if (value['schemaVersion'] != 1) {
       throw const FormatException('不支援的 schemaVersion');
     }
-    for (final group in ['theme', 'library', 'reader']) {
+    for (final group in _groups) {
       if (value[group] is! Json) throw FormatException('$group 必須是物件');
     }
     final theme = value['theme'] as Json;
     final library = value['library'] as Json;
-    final reader = value['reader'] as Json;
+    final reader = Map<String, dynamic>.of(value['reader'] as Json);
     _keys(theme, [
       'paper',
       'ink',
@@ -46,8 +51,7 @@ class DesignDocument {
     }
     _keys(reader, ['pageWidth', 'lineHeight', 'paragraphGapLines'], 'reader');
     for (final key in ['paper', 'ink', 'accent', 'forest', 'muted']) {
-      if (theme[key] is! String ||
-          !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(theme[key] as String)) {
+      if (theme[key] is! String || !_color.hasMatch(theme[key] as String)) {
         throw FormatException('theme.$key 必須為 #RRGGBB');
       }
     }
@@ -65,7 +69,14 @@ class DesignDocument {
     _range(reader['pageWidth'], 480, 1000, 'reader.pageWidth');
     _range(reader['lineHeight'], 1.3, 2.4, 'reader.lineHeight');
     _range(reader['paragraphGapLines'], 0, 3, 'reader.paragraphGapLines');
-    return DesignDocument._(value);
+    return DesignDocument._(
+      Map<String, dynamic>.unmodifiable({
+        'schemaVersion': 1,
+        'theme': Map<String, dynamic>.unmodifiable(theme),
+        'library': Map<String, dynamic>.unmodifiable(library),
+        'reader': Map<String, dynamic>.unmodifiable(reader),
+      }),
+    );
   }
 
   static void _keys(Json value, List<String> keys, String path) {
@@ -82,11 +93,19 @@ class DesignDocument {
 
   T get<T>(String group, String key) => _json[group][key] as T;
   double number(String group, String key) => (get<num>(group, key)).toDouble();
-  Json toJson() => jsonDecode(jsonEncode(_json)) as Json;
-  String get source => const JsonEncoder.withIndent('  ').convert(_json);
-  DesignDocument change(String group, String key, Object value) {
-    final json = toJson();
-    json[group][key] = value;
-    return parse(jsonEncode(json));
+  Json toJson() => {
+    ..._json,
+    for (final group in _groups)
+      group: Map<String, dynamic>.of(_json[group] as Json),
+  };
+  late final String source = const JsonEncoder.withIndent('  ').convert(_json);
+
+  DesignDocument change(String group, String key, Object value) =>
+      changeValues(group, {key: value});
+
+  DesignDocument changeValues(String group, Map<String, Object> values) {
+    final next = toJson();
+    (next[group] as Json).addAll(values);
+    return fromJson(next);
   }
 }

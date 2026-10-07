@@ -55,11 +55,26 @@ flowchart LR
   Store --> File["既有 JSON 設定檔"]
 ```
 
-## 本輪驗收
+## 直接的操作順序
+
+外觀流程按動作依序執行，沒有另建 fluent pipeline 框架：
+
+- 載入：HTTP 解碼 → fromJson 驗證並建立不可變模型 → 發布完整 DesignSnapshot → 通知畫面。
+- 主題預設：整組色彩更新 → 一次 schema 驗證 → 記住舊外觀 → 更新預覽。任一欄位錯誤不部分套用，一次復原回到原外觀。
+- 套用：取消待處理預覽 → 驗證原始 JSON → 保存 → 採用已保存快照 → 更新工作室；busy 清理集中在 finally。
+- Go 保存：驗證候選 → 讀取目前設定 → 比對 revision → publish → 回傳快照。publish 依序 Write／Sync／Close／Rename，檔案清理用 defer；儲存錯誤只在外層分類。
+
+fromJson 直接處理已解碼的欄位，不再編碼後重新解碼；編輯器原始 JSON 仍有 16 KiB 限制，HTTP 仍有回應上限。模型的三組設定固定型別且不可變，toJson 複製各組 map，source 每個模型只產生一次。單欄更新與整組預設共用實際更新操作，不逐色來回 JSON。
+
+DesignController 以一個已保存 snapshot 持有 document／revision，不分別同步兩個欄位。載入／保存完成時若 controller 或工作室已 dispose，不再發布畫面狀態；重新載入會取消尚未執行的 JSON 預覽。保留 repository、I/O 限制、CAS 與錯誤邊界各自的責任。
+
+本次修改範圍為外觀資料／controller／工作室及 Go settings 保存，未重構整個閱讀器、草稿或 VAX。新增回歸驗證輸入與輸出 map 隔離、非法整組預設不部分生效、復原、延遲請求／dispose、預覽取消及 publish 失敗保留舊資料。Go 全套測試／vet／Windows 後端編譯通過，Flutter 65 項測試通過（1 項 opt-in 跳過）、analyze 無問題。沒有新的效能基準或正式 Flutter release 建置。
+
+## 責任分工階段驗收
 
 2026-10-07 移除 Go internal/design 的 UI schema 與驗證，API handler 改為 loadClientSettings／saveClientSettings；保留 /v1/design 的 document／revision／expectedRevision 合約及既有設定檔名稱。Go 測試涵蓋未知欄位／新版 JSON 原樣保存、重開、snapshot bytes 隔離、並行單一勝者、壞覆寫與失敗保存不改資料、認證／Origin、CAS 及容量邊界。Flutter 承接色彩、字體、圖案、尺寸、必填與舊段落間距規則的測試，驗證 repository 解析及不支援 schema 的本機 fallback／保留資料。
 
-驗收結果：Go 全套測試、vet 與 Windows 後端編譯通過；Flutter 60 項測試通過（1 項 opt-in 跳過），analyze 無問題。未更換正在執行的應用程式，亦未修改私人外觀設定或書庫。
+9cf68b0 階段驗收結果：Go 全套測試、vet 與 Windows 後端編譯通過；Flutter 60 項測試通過（1 項 opt-in 跳過），analyze 無問題。未更換正在執行的應用程式，亦未修改私人外觀設定或書庫。
 
 ## 後續階段
 
