@@ -36,7 +36,7 @@ func TestImportCommitConflictProgressAndDrafts(t *testing.T) {
 	if err != nil || !duplicate || same != id {
 		t.Fatal("duplicate source was not detected")
 	}
-	b, err := s.Load(id)
+	b, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,20 +60,20 @@ func TestImportCommitConflictProgressAndDrafts(t *testing.T) {
 	if err != nil || len(drafts) != 1 || drafts[0].Content != nil {
 		t.Fatal("reference draft did not survive reload")
 	}
-	updated, err := s.Commit(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "# 修改✨\n"})
+	updated, err := s.CommitHistory(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "# 修改✨\n"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if updated.Progress != nil {
 		t.Fatal("old text progress survived an edit")
 	}
-	if _, err = s.Commit(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "過期"}); !errors.Is(err, ErrConflict) {
+	if _, err = s.CommitHistory(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "過期"}); !errors.Is(err, ErrConflict) {
 		t.Fatal("stale head accepted")
 	}
 	if err = s.SaveProgress(id, model.Position{RevisionID: head.ID}); !errors.Is(err, ErrConflict) {
 		t.Fatal("stale progress accepted")
 	}
-	restored, err := s.Commit(id, Commit{ExpectedHead: updated.Revisions[1].ID, Kind: "restore", RestoredFrom: &head.ID})
+	restored, err := s.CommitHistory(id, Commit{ExpectedHead: updated.Revisions[1].ID, Kind: "restore", RestoredFrom: &head.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestImportCommitConflictProgressAndDrafts(t *testing.T) {
 	readJSON(revisionsPath, &revision)
 	revision.Content = "tampered"
 	atomicJSON(revisionsPath, revision)
-	if _, err = s.Load(id); err == nil {
+	if _, err = s.LoadHistory(id); err == nil {
 		t.Fatal("tampered history loaded")
 	}
 }
@@ -127,10 +127,10 @@ func TestReadExistingWebLibraryAndKeepUnknownBranches(t *testing.T) {
 	if err = os.WriteFile(sentinel, []byte(`{"retained":"existing sandbox"}`), 0600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.Load(fixture.Document.ID); err != nil {
+	if _, err = s.LoadHistory(fixture.Document.ID); err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.Commit(fixture.Document.ID, Commit{ExpectedHead: fixture.Revisions[len(fixture.Revisions)-1].ID,
+	_, err = s.CommitHistory(fixture.Document.ID, Commit{ExpectedHead: fixture.Revisions[len(fixture.Revisions)-1].ID,
 		Kind: "edit", Content: "Go 修改，沙盒仍保留"})
 	if err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestRejectInvalidSourceAndPath(t *testing.T) {
 	if _, _, err := s.Import("../escape.md", []byte("hello")); err == nil {
 		t.Fatal("path traversal accepted")
 	}
-	if _, err := s.Load("../escape"); err == nil {
+	if _, err := s.LoadHistory("../escape"); err == nil {
 		t.Fatal("invalid document path accepted")
 	}
 }

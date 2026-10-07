@@ -15,12 +15,12 @@ func TestVerifiedCacheRejectsTamperingWithRestoredTimestamp(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			b, err := s.Load(id)
+			b, err := s.LoadHistory(id)
 			if err != nil {
 				t.Fatal(err)
 			}
 			firstCache := s.cache
-			b, err = s.Load(id)
+			b, err = s.LoadHistory(id)
 			if err != nil || s.cache != firstCache {
 				t.Fatalf("warm read: %v", err)
 			}
@@ -37,7 +37,7 @@ func TestVerifiedCacheRejectsTamperingWithRestoredTimestamp(t *testing.T) {
 			if err = os.Chtimes(file, stat.ModTime(), stat.ModTime()); err != nil {
 				t.Fatal(err)
 			}
-			if _, err = s.Load(id); err == nil {
+			if _, err = s.LoadHistory(id); err == nil {
 				t.Fatal("modified bytes bypassed VAX verification")
 			}
 		})
@@ -47,23 +47,23 @@ func TestVerifiedCacheRejectsTamperingWithRestoredTimestamp(t *testing.T) {
 func TestVerifiedCacheDoesNotAliasReturnedSnapshots(t *testing.T) {
 	s := testStore(t)
 	id, _, _ := s.Import("cache.txt", []byte("keep"))
-	first, err := s.Load(id)
+	first, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 	first.Revisions[0].Content = "caller mutation"
-	warm, err := s.Load(id)
+	warm, err := s.LoadHistory(id)
 	if err != nil || warm.Revisions[0].Content != "keep" {
 		t.Fatal("cache aliases caller")
 	}
 	warm.Revisions[0].Content = "second caller mutation"
-	again, err := s.Load(id)
+	again, err := s.LoadHistory(id)
 	if err != nil || again.Revisions[0].Content != "keep" {
 		t.Fatal("warm cache aliases caller")
 	}
 	s.config.Storage.VerifiedCacheMiB = 0
 	s.cache = nil
-	if _, err = s.Load(id); err != nil || s.cache != nil {
+	if _, err = s.LoadHistory(id); err != nil || s.cache != nil {
 		t.Fatal("disabled cache retained history")
 	}
 }
@@ -71,7 +71,7 @@ func TestVerifiedCacheDoesNotAliasReturnedSnapshots(t *testing.T) {
 func TestBoundedRecordsAndCumulativeHistory(t *testing.T) {
 	s := testStore(t)
 	id, _, _ := s.Import("budget.txt", []byte("keep"))
-	b, err := s.Load(id)
+	b, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,12 +86,12 @@ func TestBoundedRecordsAndCumulativeHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.Load(id); err == nil {
+	if _, err = s.LoadHistory(id); err == nil {
 		t.Fatal("oversized snapshot accepted")
 	}
 	s.config.Storage.RecordMiB = 2
 	s.config.Storage.HistoryMiB = 1
-	if _, err = s.Load(id); err == nil || !strings.Contains(err.Error(), "整本歷史") {
+	if _, err = s.LoadHistory(id); err == nil || !strings.Contains(err.Error(), "整本歷史") {
 		t.Fatalf("aggregate budget: %v", err)
 	}
 }

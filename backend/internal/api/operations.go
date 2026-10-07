@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/base64"
-	"fmt"
 	"net/http"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/compare"
@@ -34,7 +33,7 @@ func (s *Server) commit(w http.ResponseWriter, r *http.Request) {
 		respond(w, nil, err)
 		return
 	}
-	book, err := s.Store.Commit(r.PathValue("id"), input)
+	book, err := s.commitBook(r, input)
 	respond(w, readerProjection(book, r), err)
 }
 func (s *Server) progress(w http.ResponseWriter, r *http.Request) {
@@ -67,23 +66,14 @@ func (s *Server) diff(w http.ResponseWriter, r *http.Request) {
 		respond(w, nil, err)
 		return
 	}
-	book, err := s.Store.Load(r.PathValue("id"))
+	before, err := s.Store.LoadRevision(r.PathValue("id"), input.From)
 	if err != nil {
 		respond(w, nil, err)
 		return
 	}
-	var before, after *model.Revision
-	for i := range book.Revisions {
-		revision := &book.Revisions[i]
-		if revision.ID == input.From {
-			before = revision
-		}
-		if revision.ID == input.To {
-			after = revision
-		}
-	}
-	if before == nil || after == nil {
-		respond(w, nil, fmt.Errorf("比較來源不存在"))
+	after, err := s.Store.LoadRevision(r.PathValue("id"), input.To)
+	if err != nil {
+		respond(w, nil, err)
 		return
 	}
 	parts, err := compare.Text(before.Content, after.Content, s.Config.Diff.MaxCharacters, s.Config.Diff.TimeoutMs)

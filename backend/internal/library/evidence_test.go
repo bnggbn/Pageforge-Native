@@ -17,9 +17,9 @@ func evidenceFixture(t *testing.T) (*Store, model.Book, model.EvidenceWall) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, _ := s.Load(id)
+	book, _ := s.LoadHistory(id)
 	notes := []model.Note{{ID: vax.UUID(), Body: "第一個線索", Quote: "第一段。", Location: "pf:p1:來源", CreatedAt: vax.Now()}, {ID: vax.UUID(), Body: "第二個線索", Quote: "第二段。", Location: "全文筆記", CreatedAt: vax.Now()}}
-	book, err = s.Commit(id, Commit{ExpectedHead: book.Revisions[0].ID, Kind: "note", Content: book.Revisions[0].Content, Notes: notes})
+	book, err = s.CommitHistory(id, Commit{ExpectedHead: book.Revisions[0].ID, Kind: "note", Content: book.Revisions[0].Content, Notes: notes})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestEvidencePersistenceAndVersionIsolation(t *testing.T) {
 			t.Fatal("layout changed immutable data", name)
 		}
 	}
-	updated, err := s.Commit(book.ID, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: head.Notes[:1]})
+	updated, err := s.CommitHistory(book.ID, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: head.Notes[:1]})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +64,7 @@ func TestEvidencePersistenceAndVersionIsolation(t *testing.T) {
 	if _, err = s.SaveEvidence(book.ID, SaveEvidence{Wall: wall, ExpectedRevision: saved.Revision, ExpectedHead: updated.Revisions[len(updated.Revisions)-1].ID}); err == nil {
 		t.Fatal("removed note accepted as endpoint")
 	}
-	if _, err = s.Load(book.ID); err != nil {
+	if _, err = s.LoadHistory(book.ID); err != nil {
 		t.Fatal("VAX history changed", err)
 	}
 }

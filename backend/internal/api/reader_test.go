@@ -22,9 +22,9 @@ func TestReaderProjectionAndOldRevisionRetrieval(t *testing.T) {
 	}
 	defer store.Close()
 	id, _, _ := store.Import("reader.txt", []byte("original"))
-	book, _ := store.Load(id)
+	book, _ := store.LoadHistory(id)
 	old := book.Revisions[0].ID
-	book, err = store.Commit(id, library.Commit{ExpectedHead: old, Kind: "edit", Content: "changed", Notes: []model.Note{}})
+	book, err = store.CommitHistory(id, library.Commit{ExpectedHead: old, Kind: "edit", Content: "changed", Notes: []model.Note{}})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -50,7 +50,7 @@ func TestEvidenceV1MigrationBackupsAndTopics(t *testing.T) {
 	if string(backupAgain) != string(before) {
 		t.Fatal("migration backup was overwritten")
 	}
-	if _, err = s.Load(book.ID); err != nil {
+	if _, err = s.LoadHistory(book.ID); err != nil {
 		t.Fatal("VAX changed", err)
 	}
 }

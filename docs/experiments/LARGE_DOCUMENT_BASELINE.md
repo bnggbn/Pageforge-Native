@@ -1,5 +1,8 @@
 # 大型文件現況基準：2026-10-06
 
+> 2026-10-07 補充：本報告保留原提交／工作負載及歷史數據。原 objects benchmark 的 notes 情境是反覆更新同一則筆記，沒有涵蓋持續累加；新增負載、目前快照讀取與 UI 優先順序見 [review 修正報告](REVIEW_FOLLOWUP.md)。
+
+
 實驗分支 experiment/large-document-baseline；產品基準 bfb57bd。分支只加入 opt-in 探針、腳本與本報告，未更換儲存 schema、提高正式容量或加入 Merkle 套件。原始數據見 [JSON](large-document-baseline.json)。這是現有實作的診斷基準，不代表通過百萬字平台驗收。
 
 ## 環境與方法

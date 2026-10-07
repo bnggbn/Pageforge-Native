@@ -105,7 +105,7 @@ func probeDocument(t *testing.T, characters, revisions int) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := store.Load(id)
+	book, err := store.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,14 +144,14 @@ func probeDocument(t *testing.T, characters, revisions int) {
 		}
 		store = openProbeStore(t, c) // clear the application cache, not the Windows file cache
 		result.Samples = append(result.Samples, measureDocumentProbe("cold_load", func() error {
-			book, err = store.Load(id)
+			book, err = store.LoadHistory(id)
 			return err
 		}))
 		if err != nil || len(book.Revisions) != revisions {
 			t.Fatalf("cold load: revisions=%d err=%v", len(book.Revisions), err)
 		}
 		result.Samples = append(result.Samples, measureDocumentProbe("repeat_load", func() error {
-			book, err = store.Load(id)
+			book, err = store.LoadHistory(id)
 			return err
 		}))
 		if err != nil {
@@ -197,7 +197,7 @@ func probeDocument(t *testing.T, characters, revisions int) {
 	}))
 	for i := 0; i < 3; i++ {
 		result.Samples = append(result.Samples, measureDocumentProbe("edit_commit", func() error {
-			book, err = store.Commit(id, library.Commit{
+			book, err = store.CommitHistory(id, library.Commit{
 				ExpectedHead: head.ID, Kind: "edit", Content: head.Content + "改",
 			})
 			if err == nil {
@@ -207,7 +207,7 @@ func probeDocument(t *testing.T, characters, revisions int) {
 		}))
 	}
 	result.Samples = append(result.Samples, measureDocumentProbe("note_commit", func() error {
-		_, err := store.Commit(id, library.Commit{
+		_, err := store.CommitHistory(id, library.Commit{
 			ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: []model.Note{{
 				ID: vax.UUID(), Body: "Synthetic clue", Quote: "test", Location: "probe", CreatedAt: vax.Now(),
 			}},

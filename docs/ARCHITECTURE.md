@@ -47,7 +47,7 @@ library 使用既有 `server.lock` 排他檔，避免 Web 與原生版同時写�
 
 VAX 依實際 vax-sdk 1.0.0 原始碼實作：UTF-16 非 ASCII escape、排序與兩階段 SHA-256。
 Pageforge envelope 的數值只允許安全整數 timestamp；未知浮點 envelope 拒絕。
-內容未變且在快取容量內時，重新雜湊檔案後重用已驗證快照；未命中仍完整驗證。快取只有最近一本且不落盤，不以 mtime 當信任依據。reader API 只傳目前版本與歷史摘要，按 ID 取舊草稿基準；摘要分頁仍待補。設定、效能限制與差異儲存遷移方案見 [版本儲存評估](VERSION_STORAGE.md)。
+一般 Go Load／Commit 的 Book 只帶所選快照與 History／RevisionCount；完整歷史改用明確的 LoadHistory／CommitHistory，舊 HTTP 回應保持相容。objects-v1 未命中仍驗證全部歷史，正文按樹葉串流雜湊，筆記逐版 decode／canonical 後釋放；只還原選定的正文與筆記。內容未變且 head／metadata／依賴描述在快取容量內時，重新雜湊所有依賴後重用已驗證快照；查看舊版只還原該版並保留 head 快取。讀取 session 仍暫存去重物件，實體歷史預算不取消；legacy 仍完整解碼。快取只有最近一本且不落盤，不以 mtime 當信任依據。reader API 只傳目前版本與歷史摘要，按 ID 取舊草稿基準；摘要分頁仍待補。設定、效能限制與差異儲存遷移方案見 [版本儲存評估](VERSION_STORAGE.md)。
 驗證沒有簽章／外部可信 head，不提供對整鏈重寫或尾端截斷的保護。
 編輯工作區、定時復原與正式 VAX 分層；新匯入書的 [正文物件樹／筆記 blob 與相容版本讀寫](CONTENT_OBJECTS.md) 已接通；操作模型、差異復原及 root 型正式事件仍為後續規劃，見 [大型文件合約](LARGE_DOCUMENTS.md)。
 

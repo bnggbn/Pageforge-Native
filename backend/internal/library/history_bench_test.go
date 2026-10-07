@@ -28,7 +28,7 @@ func BenchmarkWarmLoadHistory(b *testing.B) {
 			if err != nil {
 				b.Fatal(err)
 			}
-			book, err := s.Load(id)
+			book, err := s.LoadHistory(id)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -52,13 +52,13 @@ func BenchmarkWarmLoadHistory(b *testing.B) {
 				b.Fatal(err)
 			}
 			// Warm validation is outside the measured loop; every read still hashes current bytes.
-			if _, err := s.Load(id); err != nil {
+			if _, err := s.LoadHistory(id); err != nil {
 				b.Fatal(err)
 			}
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				loaded, err := s.Load(id)
+				loaded, err := s.LoadHistory(id)
 				if err != nil || len(loaded.Revisions) != count {
 					b.Fatalf("load failed: %v", err)
 				}

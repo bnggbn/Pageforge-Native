@@ -2,6 +2,7 @@
 
 Windows first. Flutter/Dart owns UI; Go owns library, document rules, VAX and persistence.
 
+- Ordinary Store.Load/Commit return one snapshot plus history metadata. Use LoadRevision for historical content; LoadHistory/CommitHistory are explicitly aggregate-bounded compatibility/audit APIs. Do not hydrate all historical bodies in the reader.
 - Widgets do not access files or HTTP directly. Use repository contracts and focused ViewModels.
 - Keep working-copy persistence, reading position, version commands and diff lifecycle separate.
 - Preserve existing library JSON and immutable original/version files. Schema changes require migration.

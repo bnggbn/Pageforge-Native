@@ -22,6 +22,10 @@ func (s *Store) readObjectBook(m model.Manifest) (model.Book, error) {
 }
 
 func (s *Store) readObjectBookAt(m model.Manifest, folder string, allowCache bool) (model.Book, error) {
+	return s.readObjectHistory(m, folder, allowCache, "")
+}
+
+func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bool, snapshotID string) (model.Book, error) {
 	b := model.Book{Document: m.Document, Revisions: []model.Revision{}}
 	relative, err := filepath.Rel(s.root, folder)
 	if err != nil {
@@ -76,6 +80,7 @@ func (s *Store) readObjectBookAt(m model.Manifest, folder string, allowCache boo
 	cached := s.cache
 	s.cacheMu.Unlock()
 	if allowCache && cached != nil && cached.objectMetaKey == metaKey &&
+		(cached.snapshotID == snapshotID || (cached.snapshotID != "" && snapshotID != "")) &&
 		cached.retainedBytes <= budget && cached.retainedBytes <= int64(s.config.Storage.VerifiedCacheMiB)*1024*1024 {
 		textLimit := int64(s.config.Limits.TextMiB) * 1024 * 1024
 		notesLimit := int64(s.config.Limits.SnapshotNotesMiB) * 1024 * 1024
@@ -87,6 +92,20 @@ func (s *Store) readObjectBookAt(m model.Manifest, folder string, allowCache boo
 		}
 		if err = objects.VerifyFiles(cached.objectFiles, budget-consumed, s.config.Storage.ObjectCount); err != nil {
 			return b, fault.Read(err)
+		}
+		if snapshotID != "" {
+			var physical int64
+			for _, file := range cached.objectFiles {
+				physical += file.Bytes
+			}
+			for _, record := range records {
+				if record.ContentRoot.Bytes+record.NotesRoot.Bytes*8 > budget-consumed-physical {
+					return b, fault.New(fault.LimitExceeded, "單一版本還原超過容量限制")
+				}
+			}
+			if snapshotID != cached.snapshotID {
+				return s.snapshotFromVerified(cached.book, m, records, objects, budget-consumed, snapshotID)
+			}
 		}
 		b = cloneBook(cached.book)
 		b.Progress = s.progress(m)
@@ -114,6 +133,9 @@ func (s *Store) readObjectBookAt(m model.Manifest, folder string, allowCache boo
 	}
 	if vax.Hash(source) != hex.EncodeToString(sourceHash) {
 		return b, fault.New(fault.StorageCorrupt, "原始檔在驗證時被外部修改")
+	}
+	if snapshotID != "" {
+		return s.objectSnapshot(b, m, records, session, source, consumed, budget, key, metaKey, snapshotID, allowCache)
 	}
 	// Bound reconstruction separately: tiny changes can share objects but yield many distinct strings.
 	retained := consumed + session.Bytes

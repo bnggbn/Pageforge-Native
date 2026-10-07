@@ -8,7 +8,7 @@ func TestUTF8BOMMatchesWebImport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := store.Load(id)
+	book, err := store.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,6 +1,7 @@
 package content
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"sort"
@@ -170,4 +171,25 @@ func (s *Session) Text(ref Ref, limit int64) (string, error) {
 	}
 	appendNode(ref)
 	return out.String(), nil
+}
+
+// TextHash walks verified leaves in order without constructing a full historical string.
+func (s *Session) TextHash(ref Ref, limit int64) (string, error) {
+	if err := s.VerifyText(ref, limit); err != nil {
+		return "", err
+	}
+	digest := sha256.New()
+	var visit func(Ref)
+	visit = func(current Ref) {
+		node := s.objects[current.Hash]
+		if node.kind == textKind {
+			digest.Write(node.payload)
+			return
+		}
+		for _, child := range node.children {
+			visit(child)
+		}
+	}
+	visit(ref)
+	return hex.EncodeToString(digest.Sum(nil)), nil
 }

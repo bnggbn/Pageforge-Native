@@ -20,9 +20,26 @@ type Commit struct {
 }
 
 func (s *Store) Commit(id string, input Commit) (model.Book, error) {
+	return s.commit(id, input, true)
+}
+
+// CommitHistory preserves the old full-history return contract for audit callers.
+func (s *Store) CommitHistory(id string, input Commit) (model.Book, error) {
+	return s.commit(id, input, false)
+}
+func (s *Store) CommitReader(id string, input Commit) (model.Book, error) {
+	return s.commit(id, input, true)
+}
+func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	b, err := s.readBook(id)
+	var b model.Book
+	var err error
+	if reader {
+		b, err = s.readSnapshot(id, "")
+	} else {
+		b, err = s.readBook(id)
+	}
 	if err != nil {
 		return b, err
 	}
@@ -30,7 +47,11 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 	if head.ID != input.ExpectedHead {
 		return b, ErrConflict
 	}
-	if len(b.Revisions) >= s.config.Limits.RevisionCount {
+	count := len(b.Revisions)
+	if b.RevisionCount != 0 {
+		count = b.RevisionCount
+	}
+	if count >= s.config.Limits.RevisionCount {
 		return b, fault.New(fault.LimitExceeded, "版本數已達設定上限")
 	}
 	if input.Kind != "edit" && input.Kind != "note" && input.Kind != "restore" {
@@ -41,6 +62,14 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 	if input.Kind == "restore" {
 		found := false
 		if input.RestoredFrom != nil {
+			if reader && b.RevisionCount != 0 {
+				old, readErr := s.readSnapshot(id, *input.RestoredFrom)
+				if readErr != nil {
+					return b, readErr
+				}
+				content, notes = old.Revisions[0].Content, old.Revisions[0].Notes
+				found = true
+			}
 			for _, r := range b.Revisions {
 				if r.ID == *input.RestoredFrom {
 					content = r.Content
@@ -98,7 +127,20 @@ func (s *Store) Commit(id string, input Commit) (model.Book, error) {
 	}
 	var candidate *model.Book
 	if m.RevisionStorage == objectRevisionFormat {
-		validated, validateErr := s.readObjectBook(m)
+		var validated model.Book
+		var validateErr error
+		if reader {
+			validated, validateErr = s.readObjectHistory(m, versionFolder, true, r.ID)
+		} else {
+			validated, validateErr = s.readObjectBook(m)
+		}
+		if validateErr != nil {
+			return b, validateErr
+		}
+		candidate = &validated
+	}
+	if m.RevisionStorage != objectRevisionFormat {
+		validated, validateErr := s.readLegacyBook(m)
 		if validateErr != nil {
 			return b, validateErr
 		}

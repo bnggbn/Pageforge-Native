@@ -65,11 +65,19 @@ type Manifest struct {
 	Progress        *Position `json:"progress,omitempty"`
 	ProgressEpoch   *string   `json:"progressEpoch,omitempty"`
 }
+type RevisionSummary struct {
+	ID        string `json:"id"`
+	Kind      string `json:"kind"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type Book struct {
 	Document
-	Revisions    []Revision `json:"revisions"`
-	OriginalPath string     `json:"originalPath"`
-	Progress     *Position  `json:"progress"`
+	History       []RevisionSummary `json:"-"`
+	RevisionCount int               `json:"-"`
+	Revisions     []Revision        `json:"revisions"`
+	OriginalPath  string            `json:"originalPath"`
+	Progress      *Position         `json:"progress"`
 }
 type Summary struct {
 	ID            string  `json:"id"`

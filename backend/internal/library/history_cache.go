@@ -15,6 +15,7 @@ import (
 
 // One bounded, immutable verified history. File contents, not timestamps, define identity.
 type verifiedBook struct {
+	snapshotID    string
 	objectMetaKey string
 	objectFiles   []content.StoredFile
 	retainedBytes int64
@@ -82,6 +83,7 @@ func (s *Store) historyFingerprint(m model.Manifest, original string) (string, i
 
 // Copy mutable slices and optional fields; strings can safely share immutable bytes.
 func cloneBook(b model.Book) model.Book {
+	b.History = append([]model.RevisionSummary(nil), b.History...)
 	b.Sections = append([]model.Section{}, b.Sections...)
 	b.Sheets = append([]model.Sheet{}, b.Sheets...)
 	for i := range b.Sheets {

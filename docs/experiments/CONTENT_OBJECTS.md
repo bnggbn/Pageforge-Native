@@ -1,5 +1,8 @@
 # 內容物件儲存效能實測
 
+> 2026-10-07 補充：本報告保留原提交／工作負載及歷史數據。原 objects benchmark 的 notes 情境是反覆更新同一則筆記，沒有涵蓋持續累加；新增負載、目前快照讀取與 UI 優先順序見 [review 修正報告](REVIEW_FOLLOWUP.md)。
+
+
 2026-10-06，Windows amd64、Intel Core Ultra 7 165H、Go 1.26.2。比較同一份合成文本與 40 個有效 VAX 版本的 legacy／objects-v1。原始逐項結果見 [JSON](content-objects-results.json)，架構與限制見 [內容物件合約](../CONTENT_OBJECTS.md)。這是本次 objects-v1 實作的測量，並非既有 legacy 基準的追溯修改。
 
 量測對應 runtime commit `66d3095`，後續 commit 只補架構與實測文件。

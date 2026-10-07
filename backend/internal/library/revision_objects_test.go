@@ -21,7 +21,7 @@ func objectFixture(t *testing.T) (*Store, string, model.Book) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := s.Load(id)
+	book, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +50,7 @@ func TestObjectVersionsShareTextAndPreserveVAX(t *testing.T) {
 	firstBytes, _ := os.ReadFile(firstFile)
 	first := objectRecord(t, s, id, head.ID)
 	notes := []model.Note{{ID: vax.UUID(), Body: "自己的線索", Quote: "證據", Location: "全文筆記", CreatedAt: vax.Now()}}
-	book, err := s.Commit(id, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: notes})
+	book, err := s.CommitHistory(id, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: notes})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestObjectVersionsShareTextAndPreserveVAX(t *testing.T) {
 	if second.ContentRoot != first.ContentRoot || second.NotesRoot == first.NotesRoot {
 		t.Fatal("note version did not share text")
 	}
-	book, err = s.Commit(id, Commit{ExpectedHead: withNote.ID, Kind: "edit", Content: "前言\n" + head.Content})
+	book, err = s.CommitHistory(id, Commit{ExpectedHead: withNote.ID, Kind: "edit", Content: "前言\n" + head.Content})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func TestObjectVersionsShareTextAndPreserveVAX(t *testing.T) {
 	if third.NotesRoot != second.NotesRoot {
 		t.Fatal("edit duplicated unchanged notes")
 	}
-	book, err = s.Commit(id, Commit{ExpectedHead: book.Revisions[2].ID, Kind: "restore", RestoredFrom: &withNote.ID})
+	book, err = s.CommitHistory(id, Commit{ExpectedHead: book.Revisions[2].ID, Kind: "restore", RestoredFrom: &withNote.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestObjectVersionsShareTextAndPreserveVAX(t *testing.T) {
 	if book.Revisions[2].Notes[0].Body != "自己的線索" {
 		t.Fatal("note slices alias different versions")
 	}
-	again, err := s.Load(id)
+	again, err := s.LoadHistory(id)
 	if err != nil || again.Revisions[1].Notes[0].Body != "自己的線索" {
 		t.Fatal("cache caller alias", err)
 	}
@@ -107,11 +107,11 @@ func TestObjectVersionsShareTextAndPreserveVAX(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer reopened.Close()
-	recovered, err := reopened.Load(id)
+	recovered, err := reopened.LoadHistory(id)
 	if err != nil || recovered.Revisions[3].Content != head.Content {
 		t.Fatal("object reload with legacy default", err)
 	}
-	if _, err = reopened.Commit(id, Commit{ExpectedHead: recovered.Revisions[3].ID, Kind: "edit", Content: "繼續寫"}); err != nil {
+	if _, err = reopened.CommitHistory(id, Commit{ExpectedHead: recovered.Revisions[3].ID, Kind: "edit", Content: "繼續寫"}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -122,12 +122,12 @@ func TestObjectFormatDoesNotMigrateLegacyBook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := s.Load(id)
+	book, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
 	s.config.Storage.RevisionFormat = objectRevisionFormat
-	updated, err := s.Commit(id, Commit{ExpectedHead: book.Revisions[0].ID, Kind: "edit", Content: "next"})
+	updated, err := s.CommitHistory(id, Commit{ExpectedHead: book.Revisions[0].ID, Kind: "edit", Content: "next"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func TestObjectCacheRejectsTamperingAndRootSubstitution(t *testing.T) {
 			case "bytes":
 				mutateObject(t, s, id, record.ContentRoot.Hash, false)
 				before, _ := os.ReadFile(filepath.Join(s.root, "books", id, "manifest.json"))
-				if _, err = s.Commit(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "replacement"}); err == nil {
+				if _, err = s.CommitHistory(id, Commit{ExpectedHead: head.ID, Kind: "edit", Content: "replacement"}); err == nil {
 					t.Fatal("corrupt dependency committed")
 				}
 				after, _ := os.ReadFile(filepath.Join(s.root, "books", id, "manifest.json"))
@@ -193,7 +193,7 @@ func TestObjectCacheRejectsTamperingAndRootSubstitution(t *testing.T) {
 				s.cache = nil
 				s.config.Storage.HistoryMiB = 0
 			}
-			if _, err = s.Load(id); err == nil {
+			if _, err = s.LoadHistory(id); err == nil {
 				t.Fatal("invalid dependency passed warm verification")
 			}
 		})
@@ -216,7 +216,7 @@ func TestObjectAdmissionKeepsHeadAndRejectsUnreadableImports(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := s.Load(id)
+	book, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,14 +236,14 @@ func TestObjectAdmissionKeepsHeadAndRejectsUnreadableImports(t *testing.T) {
 	s.config.Storage.ObjectCount = len(session.Hashes())
 	before, _ := os.ReadFile(filepath.Join(s.root, "books", id, "manifest.json"))
 	notes := []model.Note{{ID: vax.UUID(), Body: "new note", Location: "all", CreatedAt: vax.Now()}}
-	if _, err = s.Commit(id, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: notes}); err == nil {
+	if _, err = s.CommitHistory(id, Commit{ExpectedHead: head.ID, Kind: "note", Content: head.Content, Notes: notes}); err == nil {
 		t.Fatal("over-budget head published")
 	}
 	after, _ := os.ReadFile(filepath.Join(s.root, "books", id, "manifest.json"))
 	if string(before) != string(after) {
 		t.Fatal("head changed on admission failure")
 	}
-	if _, err = s.Load(id); err != nil {
+	if _, err = s.LoadHistory(id); err != nil {
 		t.Fatal("old head no longer readable", err)
 	}
 }
@@ -261,7 +261,7 @@ func TestObjectVersionDirectoryRejectsLink(t *testing.T) {
 		}
 		t.Skip("symlink creation unavailable", err)
 	}
-	if _, err := s.Load(id); err == nil {
+	if _, err := s.LoadHistory(id); err == nil {
 		t.Fatal("linked versions directory accepted")
 	}
 }
@@ -331,7 +331,7 @@ func TestFailedObjectCommitDoesNotChargeUnreachableCatalogToOldHistory(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	book, err := s.Load(id)
+	book, err := s.LoadHistory(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -341,7 +341,7 @@ func TestFailedObjectCommitDoesNotChargeUnreachableCatalogToOldHistory(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.Commit(id, Commit{
+	if _, err = s.CommitHistory(id, Commit{
 		ExpectedHead: head.ID, Kind: "edit", Content: benchmarkObjectText(900000),
 	}); err == nil {
 		t.Fatal("over-capacity candidate accepted")
@@ -359,7 +359,7 @@ func TestFailedObjectCommitDoesNotChargeUnreachableCatalogToOldHistory(t *testin
 		if cold {
 			s.cache = nil
 		}
-		loaded, err := s.Load(id)
+		loaded, err := s.LoadHistory(id)
 		if err != nil || len(loaded.Revisions) != 1 || loaded.Revisions[0].Content != source {
 			t.Fatal("old head unreadable after failed commit", cold, err)
 		}

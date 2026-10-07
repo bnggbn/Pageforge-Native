@@ -40,7 +40,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("GET /v1/books", func(w http.ResponseWriter, r *http.Request) { books, err := s.Store.List(); respond(w, books, err) })
 	mux.HandleFunc("GET /v1/books/{id}", func(w http.ResponseWriter, r *http.Request) {
-		book, err := s.Store.Load(r.PathValue("id"))
+		book, err := s.loadBook(r)
 		respond(w, readerProjection(book, r), err)
 	})
 	mux.HandleFunc("GET /v1/books/{id}/versions/{revision}", s.revision)

@@ -12,7 +12,7 @@ Windows 正常關閉會攔截 WM_CLOSE：有文字／筆記草稿、尚未保存
 
 ## 已落地的效能與讀取保護
 
-- Native 讀書與提交用 view=reader 投影：只傳目前完整版本、revisionCount 及歷史摘要。舊草稿需要另一基準時，按 ID 取得一份已驗證快照。原有完整歷史 HTTP 回應保持相容。
+- 一般 Go Load／Commit 及 Native view=reader 只還原／傳目前完整版本、revisionCount 及歷史摘要（objects-v1）；歷史正文／筆記不常駐 Book。冷讀正文串流雜湊，筆記逐版驗證釋放；physical session 仍有界。LoadHistory／CommitHistory 是明確的完整稽核介面；legacy 仍完整解碼。舊草稿需要另一基準時，按 ID 取得一份已驗證快照。原有完整歷史 HTTP 回應保持相容。
 - Go 只保留最近一本、容量內的已驗證歷史快取。legacy 每次仍串流 SHA-256 原檔與全部版本位元組；新格式包含版本 metadata 及去重後的可達物件，相同內容才重用解碼結果與 VAX 驗證結果，不能用恢復 mtime 或相同檔案大小繞過驗證。快取不落盤，VAX 雜湊原語不變；新書的實體儲存 schema 見內容物件合約。呼叫端取得可變切片的副本。
 - 快取未命中（首次讀取、重啟、切換至其他書、新版或外部修改）仍解碼及完整驗證。快取識別的是實際交給驗證器的位元組，避免讀取期間外部變更造成錯誤快取。
 - 共用父目錄每次檢查一次，逐版仍檢查檔案不是連結、是一般檔案且符合容量。
@@ -25,7 +25,7 @@ Windows 正常關閉會攔截 WM_CLOSE：有文字／筆記草稿、尚未保存
 | --- | --- | --- |
 | storage.recordMiB | 64 | manifest、單份 snapshot／draft 的 JSON 位元組上限 |
 | storage.historyMiB | 256 | legacy 為原檔與全部版本；新格式另計可達物件及還原容量，草稿集合仍用此上限 |
-| storage.verifiedCacheMiB | 64 | legacy 為序列化容量，新格式估計讀取＋還原容量；0 停用新快取，Go 容器仍有額外成本 |
+| storage.verifiedCacheMiB | 64 | legacy／完整稽核計 aggregate；一般 objects-v1 計 head、metadata／摘要與依賴描述；0 停用新快取，Go 容器仍有額外成本 |
 | transport.requestTimeoutMs | 30000 | 書庫請求的標頭與完整回應共用期限 |
 | transport.responseMiB | 64 | Native 書庫 HTTP 回應上限，包含無 Content-Length 的串流 |
 

@@ -116,6 +116,12 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	if m.RevisionStorage == objectRevisionFormat {
 		return s.readObjectBook(m)
 	}
+	return s.readLegacyBook(m)
+}
+func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
+	var b model.Book
+	var err error
+	id := m.Document.ID
 	b.Document = m.Document
 	b.Revisions = []model.Revision{}
 	b.OriginalPath, err = s.safe("books", id, m.OriginalFile)
@@ -189,7 +195,12 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	b.Progress = s.progress(m)
 	return b, nil
 }
-func (s *Store) Load(id string) (model.Book, error) {
+
+// Load returns the current snapshot and metadata for historical revisions.
+func (s *Store) Load(id string) (model.Book, error) { return s.LoadReader(id) }
+
+// LoadHistory is the explicit, aggregate-bounded compatibility/audit interface.
+func (s *Store) LoadHistory(id string) (model.Book, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.readBook(id)

@@ -49,6 +49,6 @@ ApiException 包含 message、status 與可選 code；保留二參數建構與�
 
 Go 測試涵蓋包裝後 code／cause、物件超限／損壞／缺失、真實暖讀 API 的必要檔案缺失／JSON 損壞／VAX 失敗／不支援格式，以及驗證、404／405、請求超限與公開回應不帶本機路徑。Flutter 測試涵蓋兩個 HTTP repository、UTF-8 訊息、舊回應／非 JSON／壞欄位／未知代碼、coded／legacy 草稿衝突與未保存輸入保留。
 
-Go 全套測試、vet 與 Windows sidecar 編譯，Dart 格式、Flutter analyze 與 51 項測試均通過。既有長文 UI opt-in 探針未啟用；Windows symlink 權限限制仍沿用 [內容物件驗收](CONTENT_OBJECTS.md) 的未完成紀錄，不算已驗證。
+abc5c7b 錯誤代碼階段：Go 全套測試、vet 與 Windows sidecar 編譯，Dart 格式、Flutter analyze 與 51 項測試均通過。最新 review 與大檔驗收見 [修正報告](experiments/REVIEW_FOLLOWUP.md)。既有長文 UI opt-in 探針未啟用；Windows symlink 權限限制仍沿用 [內容物件驗收](CONTENT_OBJECTS.md) 的未完成紀錄，不算已驗證。
 
 本輪完成來源分類、HTTP 合約與前端傳遞，沒有新增自動修復、GC、重試或背景遷移。原有 [內容物件架構](CONTENT_OBJECTS.md) 與 [百萬字實測](experiments/CONTENT_OBJECTS.md) 的結論維持；實測仍對應原報告的 runtime commit，不把本輪回歸當成新的效能測量。分章／串流、局部樹更新、差異草稿復原、正式 root 事件、卡片發布及並行新鏈仍待實作。

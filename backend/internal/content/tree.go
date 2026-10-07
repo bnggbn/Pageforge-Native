@@ -8,7 +8,8 @@ import (
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 )
 
-// The fixed table and algorithm are part of PFCO version 1, not runtime configuration.
+// The writer uses a fixed Gear table. PFCO readers validate stored nodes,
+// independently of which boundary policy produced them.
 var gear = func() [256]uint64 {
 	var table [256]uint64
 	state := uint64(0x70616765666f7267)
@@ -25,6 +26,11 @@ var gear = func() [256]uint64 {
 // PutText scans the supplied text. Stable content boundaries reduce shifted-chunk rewrites,
 // but this full-text API does not promise logarithmic edit processing.
 func (s *Store) PutText(text string) (Ref, error) {
+	// Inspect the high bits: UTF-8 continuation bytes bias Gear's low bits.
+	return s.putText(text, uint64(8191)<<51)
+}
+
+func (s *Store) putText(text string, mask uint64) (Ref, error) {
 	if !utf8.ValidString(text) {
 		return Ref{}, fault.New(fault.InvalidRequest, "text must be UTF-8")
 	}
@@ -45,7 +51,7 @@ func (s *Store) PutText(text string) (Ref, error) {
 			rolling = (rolling << 1) + gear[text[cursor+i]]
 		}
 		cursor += width
-		if cursor-start >= MinChunk && (rolling&32767 == 0 || cursor-start == MaxChunk) {
+		if cursor-start >= MinChunk && (rolling&mask == 0 || cursor-start == MaxChunk) {
 			ref, err := s.put(textKind, []byte(text[start:cursor]), int64(cursor-start))
 			if err != nil {
 				return Ref{}, err

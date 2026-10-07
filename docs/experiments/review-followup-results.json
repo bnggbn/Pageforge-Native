@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-07",
+  "host": "Windows amd64; Intel Core Ultra 7 165H; Go 1.26.2",
+  "scope": "Synthetic temporary libraries; current-only Go Load; no HTTP, Flutter, RSS or commit timings; application cache cleared for cold, OS cache not cleared; 3 iterations are arithmetic averages, not p95.",
+  "sourceGenerator": "benchmarkObjectText(1000000), seed 526, mixed runes",
+  "revisions": 100,
+  "backend": [
+    {
+      "workload": "distinct_edits",
+      "mode": "cold",
+      "iterations": 3,
+      "nanosecondsPerOp": 383275700,
+      "bytesPerOp": 23183482,
+      "allocationsPerOp": 56039
+    },
+    {
+      "workload": "distinct_edits",
+      "mode": "warm",
+      "iterations": 3,
+      "nanosecondsPerOp": 251403000,
+      "bytesPerOp": 6198525,
+      "allocationsPerOp": 5861
+    },
+    {
+      "workload": "accumulating_notes",
+      "mode": "cold",
+      "iterations": 3,
+      "nanosecondsPerOp": 429747267,
+      "bytesPerOp": 48709741,
+      "allocationsPerOp": 342671
+    },
+    {
+      "workload": "accumulating_notes",
+      "mode": "warm",
+      "iterations": 3,
+      "nanosecondsPerOp": 317767633,
+      "bytesPerOp": 3848205,
+      "allocationsPerOp": 4656
+    }
+  ]
+}
