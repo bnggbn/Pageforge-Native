@@ -48,6 +48,12 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 	digest.Write(sourceHash)
 	budget := int64(s.config.Storage.HistoryMiB) * 1024 * 1024
 	consumed := sourceSize
+	if snapshotID != "" {
+		consumed += documentProjectionBytes(m.Document)
+	}
+	if consumed > budget {
+		return b, fault.New(fault.LimitExceeded, "目前文件投影超過容量限制")
+	}
 	versions, err := s.safe(relative, "versions")
 	if err != nil {
 		return b, fault.Read(err)

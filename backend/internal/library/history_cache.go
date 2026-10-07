@@ -127,3 +127,22 @@ func appendFingerprint(digest hash.Hash, data []byte) {
 	sum := sha256.Sum256(data)
 	digest.Write(sum[:])
 }
+
+// Current chapter/sheet projections are not historical bodies, but still occupy
+// memory. Include text and slice/string descriptors in reader/cache estimates.
+func documentProjectionBytes(doc model.Document) int64 {
+	total := int64(512 + len(doc.ID) + len(doc.Title) + len(doc.Filename) + len(doc.Actor) + len(doc.Salt) + len(doc.Genesis) + len(doc.OriginalHash))
+	for _, section := range doc.Sections {
+		total += 32 + int64(len(section.Title)+len(section.Text))
+	}
+	for _, sheet := range doc.Sheets {
+		total += 48 + int64(len(sheet.Name))
+		for _, row := range sheet.Rows {
+			total += 24
+			for _, cell := range row {
+				total += 16 + int64(len(cell))
+			}
+		}
+	}
+	return total
+}

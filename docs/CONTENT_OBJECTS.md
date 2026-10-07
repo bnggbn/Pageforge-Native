@@ -91,7 +91,7 @@ Catalog 每次新增物件時重寫有界集合；這避免許多小檔案開啟
 | storage.objectCatalogMiB | 8 | 1–32；catalog 實際位元組上限；滿時新物件存 loose 檔，縮小到低於現有大小會拒絕讀取 |
 | storage.historyMiB | 256 | 原檔／版本 JSON／不同可達物件的讀取預算；另外限制還原內容與索引容量；集合緩衝另以 objectCatalogMiB 限制 |
 | storage.recordMiB | 64 | 版本 metadata／manifest／草稿等 JSON 的單檔上限 |
-| storage.verifiedCacheMiB | 64 | 一般新格式快取只計所選 head、版本 metadata／摘要及依賴描述；不計已釋放的整份 session payload；完整稽核仍計 aggregate；0 不建立新快取 |
+| storage.verifiedCacheMiB | 64 | 一般新格式快取只計所選 head（包括當前章節／工作表投影）、版本 metadata／摘要及依賴描述；不計已釋放的整份 session payload；完整稽核仍計 aggregate；0 不建立新快取 |
 
 單個正文葉上限 64 KiB，筆記 blob 沿用 limits.snapshotNotesMiB（預設 5），根正文的展開長度沿用 limits.textMiB（預設 5）。樹深度最多 32。容量估計與 Go TotalAlloc 均不是程序 RSS 的保證；檔案讀取、解碼與容器有額外成本。未引用 catalog 條目不計入可達歷史預算，避免失敗提交使舊 head 超量；集合整檔緩衝仍受獨立容量上限保護，實際讀取記憶體需另加此成本。objectCount 不限制未引用垃圾檔總數；GC 與實體磁碟總預算為後續工作。
 

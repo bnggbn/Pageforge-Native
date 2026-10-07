@@ -134,3 +134,77 @@ func TestReaderSnapshotChecksUnselectedHistoryBytesOnWarmLoad(t *testing.T) {
 		t.Fatal("unselected version corruption ignored")
 	}
 }
+
+func TestDefaultSnapshotContractAcrossStorageFormats(t *testing.T) {
+	for _, format := range []string{"legacy", objectRevisionFormat} {
+		t.Run(format, func(t *testing.T) {
+			s := testStore(t)
+			s.config.Storage.RevisionFormat = format
+			id, _, err := s.Import("contract.txt", []byte("original"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			b, err := s.Load(id)
+			if err != nil || len(b.Revisions) != 1 || b.RevisionCount != 1 {
+				t.Fatal("default Load", err)
+			}
+			old := b.Revisions[0].ID
+			for i := 0; i < 2; i++ {
+				b, err = s.Commit(id, Commit{ExpectedHead: b.Revisions[0].ID, Kind: "edit", Content: b.Revisions[0].Content + " changed"})
+				if err != nil || len(b.Revisions) != 1 || b.RevisionCount != i+2 || len(b.History) != i+2 {
+					t.Fatal("default Commit must return one snapshot", err)
+				}
+			}
+			history, err := s.LoadHistory(id)
+			if err != nil || len(history.Revisions) != 3 {
+				t.Fatal("explicit history", err)
+			}
+			selected, err := s.LoadRevision(id, old)
+			if err != nil || selected.Content != "original" {
+				t.Fatal("historical selection", err)
+			}
+		})
+	}
+}
+
+func TestReaderCacheIncludesCurrentChapterProjection(t *testing.T) {
+	s, id, b := objectFixture(t)
+	s.config.Storage.VerifiedCacheMiB = 1
+	m, err := s.manifest(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	projection := strings.Repeat("view", 512*1024)
+	m.Document.Sections = []model.Section{{Title: "chapter", Text: projection}}
+	original := b.Revisions[0]
+	first, err := vax.Create(m.Document, nil, "import", original.Content, original.Notes, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	folder := filepath.Join(s.root, "books", id)
+	if err = s.writeRevision(folder, m.RevisionStorage, first); err != nil {
+		t.Fatal(err)
+	}
+	m.RevisionIDs = []string{first.ID}
+	if err = atomicJSON(filepath.Join(folder, "manifest.json"), m); err != nil {
+		t.Fatal(err)
+	}
+	s.cache = nil
+	loaded, err := s.Load(id)
+	if err != nil || loaded.Sections[0].Text != projection {
+		t.Fatal(err)
+	}
+	if s.cache != nil {
+		t.Fatal("large current chapter projection ignored by cache capacity")
+	}
+	s.config.Storage.VerifiedCacheMiB = 4
+	loaded, err = s.Load(id)
+	if err != nil || s.cache == nil {
+		t.Fatal("within-capacity projection was not cached", err)
+	}
+	loaded.Sections[0].Text = "caller mutation"
+	warm, err := s.Load(id)
+	if err != nil || warm.Sections[0].Text != projection {
+		t.Fatal("projection cache alias", err)
+	}
+}

@@ -37,5 +37,6 @@
       "bytesPerOp": 3848205,
       "allocationsPerOp": 4656
     }
-  ]
+  ],
+  "backendRuntimeCommit": "ed5f7d3"
 }

@@ -31,9 +31,11 @@
 
 writer 使用高13bits 的固定遮罩 8191 << 51；只降低低位元遮罩對狹窄 emoji 字母表仍無效。新舊 PFCO v1 wire／讀取約束不變，不重新切舊樹或修改正式 VAX。實際 hard-limit 葉比例：ASCII 6/14 → 0/30，中文19/43 → 8/56，emoji41/42 → 9/67。
 
+一般 Load／Commit 的一份快照回傳合約亦對 legacy 做回歸，底層全解碼限制仍保留。cache／reader 預算包含當前章節與工作表投影；另有超過 cache 容量的投影不常駐及可變 slice 隔離測試。
+
 ## 本機 Go 對照量測
 
-Windows amd64、Core Ultra 7 165H、Go1.26.2，一書100版，1M mixed runes（benchmarkObjectText／seed526），每個子項3次的平均。cold 只清應用程式 cache，不清 OS cache；warm 先完成一次一般 Load。B/op 是累計配置量，不是峰值或RSS；沒有 HTTP／Flutter／正常 Commit 時間。原始數值見 [JSON](review-followup-results.json)。
+量測 runtime 為 ed5f7d3；後續 legacy 回傳與當前投影預算回歸不追溯改寫數值。Windows amd64、Core Ultra 7 165H、Go1.26.2，一書100版，1M mixed runes（benchmarkObjectText／seed526），每個子項3次的平均。cold 只清應用程式 cache，不清 OS cache；warm 先完成一次一般 Load。B/op 是累計配置量，不是峰值或RSS；沒有 HTTP／Flutter／正常 Commit 時間。原始數值見 [JSON](review-followup-results.json)。
 
 | 工作負載／模式 | Load 平均 | 配置／次 | allocs／次 |
 | --- | --- | --- | --- |

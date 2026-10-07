@@ -124,17 +124,7 @@ func (s *Store) readSnapshot(id, revision string) (model.Book, error) {
 		if err != nil {
 			return b, err
 		}
-		b.History = make([]model.RevisionSummary, 0, len(b.Revisions))
-		var selected model.Revision
-		for _, r := range b.Revisions {
-			b.History = append(b.History, model.RevisionSummary{ID: r.ID, Kind: r.Kind, CreatedAt: r.CreatedAt})
-			if r.ID == revision {
-				selected = r
-			}
-		}
-		b.RevisionCount = len(b.Revisions)
-		b.Revisions = []model.Revision{selected}
-		return b, nil
+		return projectLegacySnapshot(b, revision)
 	}
 	folder, err := s.safe("books", id)
 	if err != nil {
@@ -189,4 +179,21 @@ func (s *Store) snapshotFromVerified(head model.Book, m model.Manifest, records 
 		return b, nil
 	}
 	return b, fault.New(fault.NotFound, "版本不在此主線")
+}
+
+func projectLegacySnapshot(b model.Book, id string) (model.Book, error) {
+	history := make([]model.RevisionSummary, 0, len(b.Revisions))
+	var selected *model.Revision
+	for i, r := range b.Revisions {
+		history = append(history, model.RevisionSummary{ID: r.ID, Kind: r.Kind, CreatedAt: r.CreatedAt})
+		if r.ID == id {
+			selected = &b.Revisions[i]
+		}
+	}
+	if selected == nil {
+		return model.Book{}, fault.New(fault.NotFound, "版本不在此主線")
+	}
+	b.History, b.RevisionCount = history, len(b.Revisions)
+	b.Revisions = []model.Revision{*selected}
+	return b, nil
 }

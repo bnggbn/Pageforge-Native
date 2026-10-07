@@ -144,6 +144,12 @@ func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error)
 		if validateErr != nil {
 			return b, validateErr
 		}
+		if reader {
+			validated, validateErr = projectLegacySnapshot(validated, r.ID)
+			if validateErr != nil {
+				return b, validateErr
+			}
+		}
 		candidate = &validated
 	}
 	manifest, err := s.safe("books", id, "manifest.json")
