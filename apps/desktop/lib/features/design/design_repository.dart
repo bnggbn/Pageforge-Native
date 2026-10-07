@@ -16,6 +16,7 @@ abstract class DesignRepository {
   Future<DesignSnapshot> save(DesignDocument document, String expectedRevision);
 }
 
+/// The transport returns opaque settings; this adapter validates the UI schema.
 class HttpDesignRepository implements DesignRepository {
   HttpDesignRepository(this.origin, this.token, {http.Client? client})
     : _client = client ?? http.Client();

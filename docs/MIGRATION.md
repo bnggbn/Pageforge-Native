@@ -10,6 +10,7 @@
 - 書架分批入場、書卡浮起／焦點／按下回饋、閱讀轉場與模式切換；支援減少動畫。
 - 動畫不得維持兩份 PDF／文字閱讀面板，父層更新不重播入場。
 - 設定預設、本機覆寫與 library 路徑。
+- 外觀責任分工：Flutter 擁有 design／theme schema、預設、驗證及套用；Go internal/settings 只保存不透明 JSON，保留既有檔案與 API、不重複 UI 規則。[合約與驗收](DESIGN_STUDIO.md)。
 - JSON 外觀工作室：主題、固定書架／文字閱讀場景、屬性與 JSON 即時預覽、復原重做、保存後套用及重開恢復；[外觀合約](DESIGN_STUDIO.md)。場景樹／拖曳／動作編排／設計 VAX 尚未實作。
 - 接通書架、MD／TXT 匯入與分節編輯、引用筆記、主線歷史／還原與文字 diff；編輯按鍵只更新目前節，全文於保存／複製時組合，UTF-16 安全範圍與 Unicode／CRLF 保留，節大小可配置。跨節選取、全文件 undo、閱讀可視區及按章 API 尚未做；[本機驗證與限制](experiments/REVIEW_FOLLOWUP.md)。
 - Markdown 共用文章選取區，驗收跨段落拖曳、畫面外段落全選／複製與精確引用；TXT／EPUB 文字使用同一選取區。

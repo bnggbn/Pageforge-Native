@@ -20,14 +20,14 @@ backend/
   internal/content/          typed hash 物件、正文樹、有界集合與依賴驗證
   internal/fault/            穩定錯誤代碼、原因鏈；不依賴 HTTP
   internal/vax/              官方 VAX Go release 的 Pageforge 文件事件轉接層
-  internal/design/           嚴格外觀 JSON、revision 衝突檢查與原子保存
+  internal/settings/         不透明客戶端 JSON、byte revision 與原子保存
   internal/compare/          有輸入上限與 deadline 的文字 diff
   internal/api/              本機 API 與請求驗證
 ```
 
 儲存／版本來源以 typed fault 提供代碼與原始 cause，API 集中轉換 HTTP status／code／公開 error，Dart ApiException 保留 code。錯誤與成功資料的解析分開，401／403／routing 404／405 也使用 JSON；暖讀錯誤不以快取掩蓋。合約與相容界線見 [錯誤代碼](API_ERRORS.md)。
 
-Widget 不直接操作 library。ViewModel 依赖 repository 合約，Go 的儲存與 VAX 分開。
+Widget 不直接操作 library。ViewModel 依賴 repository 合約，Go 的儲存與 VAX 分開。外觀 schema／主題規則／預設／解析與套用全由 Flutter 負責；Go 不持有 Theme／Reader／Library 外觀模型，settings Store 僅提供 JSON 結構／容量、CAS 與原子寫入。[外觀責任界線](DESIGN_STUDIO.md)。
 sectioned_draft.dart 保留原文固定範圍及 immutable 替換表；EditorView 只把目前節交給 TextField，WorkingCopy 在保存／明確取全文時才組合。範圍及字元保留，沒有在每次按鍵 join 全文；草稿／API 仍是全文，閱讀可視區與全文件操作模型待補。
 working copy、reading position 與 evidence wall 各自控制防抖與落盤；筆記輸入不通知整個閱讀畫面重新解析 Markdown。
 線索牆不建立全部卡片 Widget，只建立可視區及緩衝區內的卡片；紅線集中繪製，背景點格只繪製視窗大小。段落額外間距由外觀 JSON 控制；TXT／EPUB 在共用選取容器內保留實際分隔符並增加顯示 padding，尾端空行的版面高度獨立調整，避免雙算間距。TXT／EPUB 跨段複製由選取端點映射原文範圍，保留完整分隔字元。

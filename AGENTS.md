@@ -13,6 +13,7 @@ Windows first. Flutter/Dart owns UI; Go owns library, document rules, VAX and pe
 - New errors crossing an API boundary use internal/fault codes; HTTP returns code + error. Preserve errors.Is/errors.As causes, classify required missing storage separately from missing resources, and never branch on message text. See docs/API_ERRORS.md.
 - Dart dependencies use Flutter Pub; backend dependencies use Go Modules. No Node runtime.
 - Keep UI styling with its widgets; share theme tokens in ui/theme.dart.
+- Design/theme schemas, visual defaults, compatibility and rendering rules belong to Flutter. Go internal/settings persists opaque JSON with fixed server-supplied paths, byte limits, CAS and atomic writes; never duplicate UI validators in Go. The legacy /v1/design URL is a persistence contract, not Go design business logic.
 - Update README capability table and docs/MIGRATION.md when a feature moves from planned to implemented.
 
 Required checks for affected code: gofmt, go test ./..., go vet ./..., dart format,

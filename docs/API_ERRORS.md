@@ -29,7 +29,7 @@ Content-Type 為 application/json; charset=utf-8。保留原本的 error 字串�
 | STORAGE_IO | 500 | 讀寫、權限、Sync、rename 或 hard-link 發布失敗 |
 | INTERNAL_ERROR | 500 | 內部容量配置、編碼或服務設定錯誤；未知 typed code 安全退回此類 |
 
-物件缺失回 500，因為文件已存在而依賴不完整；只有未知資源使用 404。比過去「多數錯誤都回 400」更精確，舊客戶端仍能藉非 2xx 與 error 顯示失敗。部分尚未細分的既有業務驗證暫用 INVALID_REQUEST；新增跨 API 的錯誤應從來源給出 typed code。啟動／設定載入失敗與 transport timeout、斷線、回應超量不屬於成功收到的 HTTP JSON 錯誤回應，仍保留原本的本機錯誤型別。
+物件缺失回 500，因為文件已存在而依賴不完整；只有未知資源使用 404。比過去「多數錯誤都回 400」更精確，舊客戶端仍能藉非 2xx 與 error 顯示失敗。部分尚未細分的既有業務驗證暫用 INVALID_REQUEST；新增跨 API 的錯誤應從來源給出 typed code。外觀設定持久層只分類 JSON 結構、容量、必要檔案讀寫及 CAS；外觀欄位／schema 驗證由 Flutter FormatException 處理，Go 不回傳 UI 規則錯誤。啟動／設定載入失敗與 transport timeout、斷線、回應超量不屬於成功收到的 HTTP JSON 錯誤回應，仍保留原本的本機錯誤型別。
 
 ## Go 與儲存邊界
 

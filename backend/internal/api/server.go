@@ -11,17 +11,17 @@ import (
 	"strings"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/config"
-	"github.com/bnggbn/Pageforge-Native/backend/internal/design"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/library"
+	"github.com/bnggbn/Pageforge-Native/backend/internal/settings"
 )
 
 type Server struct {
-	Design   *design.Store
-	Store    *library.Store
-	Config   config.Config
-	Token    string
-	Shutdown func()
+	ClientSettings *settings.Store
+	Store          *library.Store
+	Config         config.Config
+	Token          string
+	Shutdown       func()
 }
 
 func New(store *library.Store, c config.Config, shutdown func()) *Server {
@@ -33,8 +33,8 @@ func New(store *library.Store, c config.Config, shutdown func()) *Server {
 }
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/design", s.loadDesign)
-	mux.HandleFunc("PUT /v1/design", s.saveDesign)
+	mux.HandleFunc("GET /v1/design", s.loadClientSettings)
+	mux.HandleFunc("PUT /v1/design", s.saveClientSettings)
 	mux.HandleFunc("GET /v1/status", func(w http.ResponseWriter, r *http.Request) {
 		send(w, map[string]any{"name": "Pageforge", "config": s.Config})
 	})
