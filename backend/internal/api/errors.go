@@ -46,31 +46,31 @@ func writeError(w http.ResponseWriter, code fault.Code, message string) {
 	case fault.InvalidRequest:
 		status = http.StatusBadRequest
 	case fault.UnsafePath:
-		status, message = http.StatusBadRequest, "資料路徑無效或包含不允許的連結。"
+		status, message = http.StatusBadRequest, "The storage path is invalid or contains a disallowed link."
 	case fault.NotFound:
-		status, message = http.StatusNotFound, "找不到要求的資源。"
+		status, message = http.StatusNotFound, "The requested resource was not found."
 	case fault.Conflict:
 		status = http.StatusConflict
 	case fault.LimitExceeded:
-		status, message = http.StatusRequestEntityTooLarge, "內容超過設定容量或結構上限。"
+		status, message = http.StatusRequestEntityTooLarge, "Content exceeds the configured size or structure limit."
 	case fault.Unauthorized:
-		status, message = http.StatusUnauthorized, "請求未通過驗證。"
+		status, message = http.StatusUnauthorized, "The request is not authenticated."
 	case fault.Forbidden:
-		status, message = http.StatusForbidden, "此請求不被允許。"
+		status, message = http.StatusForbidden, "The request is not allowed."
 	case fault.MethodNotAllowed:
-		status, message = http.StatusMethodNotAllowed, "此資源不支援這個請求方式。"
+		status, message = http.StatusMethodNotAllowed, "This resource does not support the request method."
 	case fault.StorageMissing:
-		message = "書庫依賴檔案缺失，請檢查檔案或備份。"
+		message = "A required library file is missing. Check the files or backups."
 	case fault.StorageCorrupt:
-		message = "書庫內容驗證失敗，請檢查檔案或備份。"
+		message = "Library integrity verification failed. Check the files or backups."
 	case fault.StorageIO:
-		message = "書庫讀寫失敗，請檢查儲存空間與權限。"
+		message = "Library I/O failed. Check storage space and permissions."
 	case fault.UnsupportedStorage:
-		message = "此書庫儲存格式尚不支援，請使用相容版本。"
+		message = "This library storage format requires a compatible application version."
 	case fault.Internal:
-		message = "後端處理失敗。"
+		message = "The backend could not complete the request."
 	default:
-		code, message = fault.Internal, "後端處理失敗。"
+		code, message = fault.Internal, "The backend could not complete the request."
 	}
 	w.Header().Del("Content-Length")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

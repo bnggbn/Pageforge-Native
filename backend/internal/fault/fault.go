@@ -79,17 +79,17 @@ func Read(err error) error {
 		return err
 	}
 	if errors.Is(err, fs.ErrNotExist) {
-		return Wrap(StorageMissing, "書庫依賴檔案缺失", err)
+		return Wrap(StorageMissing, "required library dependency is missing", err)
 	}
 	var syntax *json.SyntaxError
 	var value *json.UnmarshalTypeError
 	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
 		errors.As(err, &syntax) || errors.As(err, &value) {
-		return Wrap(StorageCorrupt, "書庫資料損壞", err)
+		return Wrap(StorageCorrupt, "library data is corrupt", err)
 	}
-	return Wrap(StorageIO, "無法讀取書庫資料", err)
+	return Wrap(StorageIO, "could not read library data", err)
 }
 
-func Write(err error) error { return Ensure(StorageIO, "無法保存書庫資料", err) }
+func Write(err error) error { return Ensure(StorageIO, "could not save library data", err) }
 
-func Encode(err error) error { return Ensure(Internal, "無法編碼儲存資料", err) }
+func Encode(err error) error { return Ensure(Internal, "could not encode storage data", err) }

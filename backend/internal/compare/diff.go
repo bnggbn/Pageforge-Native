@@ -15,7 +15,7 @@ type Part struct {
 
 func Text(before, after string, maxCharacters, timeoutMs int) ([]Part, error) {
 	if len(utf16.Encode([]rune(before)))+len(utf16.Encode([]rune(after))) > maxCharacters {
-		return nil, fmt.Errorf("比較內容超過設定上限，請匯出後比較")
+		return nil, fmt.Errorf("comparison exceeds the configured limit; export the content to compare it")
 	}
 	dmp := diffmatchpatch.New()
 	dmp.DiffTimeout = time.Duration(timeoutMs) * time.Millisecond

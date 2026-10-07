@@ -3,7 +3,7 @@
 獨立於原 Pageforge Web repo 的 Flutter／Dart + Go 重構。第一個驗收平台是 Windows。
 
 - Flutter 負責書架、閱讀、編輯、筆記與版本介面。
-- Go 負責設定、library、匯入、VAX 驗證／提交、草稿、進度與文字 diff。
+- Go 負責設定、library、匯入、VAX 驗證／提交、草稿、進度與文字 diff。VAX 協定直接使用官方 Go release，不另維護 encoder／雜湊實作；[依賴界線](docs/VAX_DEPENDENCY.md)。
 - 不需要 Node、Electron 或雲端帳號。Dart 套件由 Flutter Pub 管理，Go 套件由 Go Modules 管理。
 
 ## 啟動

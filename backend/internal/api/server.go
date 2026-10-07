@@ -88,17 +88,17 @@ func (s *Server) body(w http.ResponseWriter, r *http.Request, target any) error 
 	if err := decoder.Decode(target); err != nil {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			return fault.New(fault.LimitExceeded, "請求超過設定容量")
+			return fault.New(fault.LimitExceeded, "request exceeds the configured limit")
 		}
-		return fault.Wrap(fault.InvalidRequest, "請求格式無效", err)
+		return fault.Wrap(fault.InvalidRequest, "invalid request format", err)
 	}
 	var trailing any
 	if err := decoder.Decode(&trailing); err != io.EOF {
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
-			return fault.New(fault.LimitExceeded, "請求超過設定容量")
+			return fault.New(fault.LimitExceeded, "request exceeds the configured limit")
 		}
-		return fault.New(fault.InvalidRequest, "請求有多餘資料")
+		return fault.New(fault.InvalidRequest, "request contains trailing data")
 	}
 	return nil
 }

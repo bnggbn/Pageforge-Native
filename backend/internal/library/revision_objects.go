@@ -72,7 +72,7 @@ func (s *Store) writeRevision(folder, format string, revision model.Revision) er
 		return fault.Encode(err)
 	}
 	if int64(len(encoded)) > int64(s.config.Storage.RecordMiB)*1024*1024 {
-		return fault.New(fault.LimitExceeded, "版本資料超過讀取容量")
+		return fault.New(fault.LimitExceeded, "revision data exceeds the read limit")
 	}
 	return atomicJSON(file, record)
 }
@@ -145,7 +145,7 @@ func (s *Store) revisionNotes(m model.Manifest, id string) ([]model.Note, error)
 		return nil, fault.Read(err)
 	}
 	if vax.Hash([]byte(canonical)) != envelope.SDTO.NotesHash {
-		return nil, fault.New(fault.StorageCorrupt, "筆記內容與版本承諾不一致")
+		return nil, fault.New(fault.StorageCorrupt, "note content does not match the revision commitment")
 	}
 	return notes, nil
 }

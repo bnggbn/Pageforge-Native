@@ -1,6 +1,7 @@
 package library
 
 import (
+	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,7 +92,8 @@ func TestBoundedRecordsAndCumulativeHistory(t *testing.T) {
 	}
 	s.config.Storage.RecordMiB = 2
 	s.config.Storage.HistoryMiB = 1
-	if _, err = s.LoadHistory(id); err == nil || !strings.Contains(err.Error(), "整本歷史") {
+	_, err = s.LoadHistory(id)
+	if errorCode, ok := fault.CodeOf(err); !ok || errorCode != fault.LimitExceeded {
 		t.Fatalf("aggregate budget: %v", err)
 	}
 }

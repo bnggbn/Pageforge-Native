@@ -7,11 +7,11 @@
 ```json
 {
   "code": "STORAGE_MISSING",
-  "error": "書庫依賴檔案缺失，請檢查檔案或備份。"
+  "error": "A required library file is missing. Check the files or backups."
 }
 ```
 
-Content-Type 為 application/json; charset=utf-8。保留原本的 error 字串並新增 code，成功 payload 不變。程式只依 code／HTTP status 分流，error 是給使用者看的文字，可調整用字及語系；不以 Error() 的英文或中文內容判斷。
+Content-Type 為 application/json; charset=utf-8。保留原本的 error 字串並新增 code，成功 payload 不變。程式只依 code／HTTP status 分流，error 為英文公開診斷，Flutter 依 code 提供中文顯示文字並以 diagnostic 保存原訊息；不以 Error() 的英文或中文內容判斷。
 
 | code | HTTP | 判斷與處理 |
 | --- | --- | --- |
@@ -41,9 +41,9 @@ Content-Type 為 application/json; charset=utf-8。保留原本的 error 字串�
 
 ## Flutter 相容與衝突
 
-ApiException 包含 message、status 與可選 code；保留二參數建構與原 library_repository.dart 的 export，既有呼叫仍可用。HttpLibraryRepository／HttpDesignRepository 共用 decodeResponse，非 JSON 錯誤回應、缺少或型別錯誤的欄位會回退可讀訊息，避免顯示 null 或另拋解析例外。
+ApiException 包含本地化 message、status、可選 code 及後端原文 diagnostic；保留二參數建構與原 library_repository.dart 的 export，既有呼叫仍可用。HttpLibraryRepository／HttpDesignRepository 共用 decodeResponse，非 JSON 錯誤回應、缺少或型別錯誤的欄位會回退可讀訊息，避免顯示 null 或另拋解析例外。
 
-未知但有效的字串代碼會原樣保留。有代碼時 isConflict 只接受 CONFLICT；缺少有效代碼時才以舊後端的 409 相容處理。草稿 CAS 衝突另存副本並保留輸入；未知 coded 409 不自動建立副本或重試。這沒有實作正式正文／筆記／布局的「並行新鏈」，後續仍見 [ID 與同步合約](IDENTITY_SYNC.md)。
+已知代碼在 Flutter 端翻譯；未知代碼及無代碼的舊回應使用原 error 文字，缺訊息時回退「後端請求失敗」。未知但有效的字串代碼會原樣保留。有代碼時 isConflict 只接受 CONFLICT；缺少有效代碼時才以舊後端的 409 相容處理。草稿 CAS 衝突另存副本並保留輸入；未知 coded 409 不自動建立副本或重試。這沒有實作正式正文／筆記／布局的「並行新鏈」，後續仍見 [ID 與同步合約](IDENTITY_SYNC.md)。
 
 ## 驗收與結論
 
@@ -52,3 +52,5 @@ Go 測試涵蓋包裝後 code／cause、物件超限／損壞／缺失、真實�
 abc5c7b 錯誤代碼階段：Go 全套測試、vet 與 Windows sidecar 編譯，Dart 格式、Flutter analyze 與 51 項測試均通過。最新 review 與大檔驗收見 [修正報告](experiments/REVIEW_FOLLOWUP.md)。既有長文 UI opt-in 探針未啟用；Windows symlink 權限限制仍沿用 [內容物件驗收](CONTENT_OBJECTS.md) 的未完成紀錄，不算已驗證。
 
 本輪完成來源分類、HTTP 合約與前端傳遞，沒有新增自動修復、GC、重試或背景遷移。原有 [內容物件架構](CONTENT_OBJECTS.md) 與 [百萬字實測](experiments/CONTENT_OBJECTS.md) 的結論維持；實測仍對應原報告的 runtime commit，不把本輪回歸當成新的效能測量。分章／串流、局部樹更新、差異草稿復原、正式 root 事件、卡片發布及並行新鏈仍待實作。
+
+2026-10-07 語言分工更新：後端自有診斷／公開 error 已改英文；Flutter 已知代碼中文化並保留 diagnostic，未知碼與舊回應沿用相容規則。Go 測試／vet／Windows 後端編譯、Flutter 55 項測試及 analyze 通過；[VAX 官方依賴與驗收範圍](VAX_DEPENDENCY.md)。

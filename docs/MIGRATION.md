@@ -19,6 +19,7 @@
 - 驗證既有 library 主線；舊書原始檔、manifest、versions、drafts 與 progress.json 保持相容。新物件格式以 manifest marker 區分，舊程式尚不能讀取。
 - 一般 Go Load／Commit 的目前快照＋歷史摘要、objects-v1 串流正文雜湊與逐版筆記驗證／釋放、指定舊版按需還原／diff、只留 head 的驗證快取；LoadHistory／CommitHistory 與舊 HTTP 全歷史相容，legacy 仍完整解碼。新舊格式均有切 head 前容量預檢。另有精簡 reader HTTP 投影、舊草稿按需取基準版本、內容雜湊驗證快取、單檔／整本歷史讀取限制、批次匯入索引與完整 HTTP deadline；[版本儲存評估](VERSION_STORAGE.md)。
 - 線索牆圖釘移動只重繪紅線，卡片只更新活動位置；關係標籤重用排版並釋放，不繪製視窗外紅線。
+- VAX canonical／genesis／SAI 改為官方 Go SDK v0.0.0 直接依賴，移除本地協定實作；後端診斷英文、Flutter 依代碼顯示中文。[依賴與驗收](VAX_DEPENDENCY.md)。
 - 新匯入書預設 objects-v1：依內容分塊的正文樹、獨立筆記 blob、物件去重及有界驗證；正式 VAX 維持還原全文雜湊，舊書不遷移，配置／架構見 [內容物件](CONTENT_OBJECTS.md)。尚未提供操作式編輯、分章 API、差異復原或 root 型正式事件。
 - 後端 typed 錯誤代碼、code／error JSON、必要依賴缺失／完整性／容量／I/O 分流、Flutter 共用解析與舊回應相容；草稿 CAS 以代碼判斷，正式並行新鏈尚未實作；[錯誤合約與本輪結論](API_ERRORS.md)。
 - Go 自動測試與 vet、Flutter analyze／測試、Windows release 建置。

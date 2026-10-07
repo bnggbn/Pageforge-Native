@@ -36,7 +36,7 @@ func (s *Store) evidence(id string) (model.EvidenceWall, error) {
 		return wall, err
 	}
 	if len(data) > s.config.EvidenceWall.LayoutMiB*1024*1024 {
-		return wall, fmt.Errorf("線索牆超過容量")
+		return wall, fmt.Errorf("evidence wall exceeds the configured limit")
 	}
 	wall = model.EvidenceWall{}
 	if err = json.Unmarshal(data, &wall); err != nil {
@@ -94,7 +94,7 @@ func (s *Store) SaveEvidence(id string, input SaveEvidence) (model.EvidenceWall,
 	}
 	encoded, err := json.Marshal(wall)
 	if err != nil || len(encoded) > s.config.EvidenceWall.LayoutMiB*1024*1024 {
-		return wall, fmt.Errorf("線索牆超過容量")
+		return wall, fmt.Errorf("evidence wall exceeds the configured limit")
 	}
 	if err = s.backupEvidenceV1(id, file); err != nil {
 		return wall, err

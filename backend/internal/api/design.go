@@ -10,7 +10,7 @@ import (
 
 func (s *Server) loadDesign(w http.ResponseWriter, r *http.Request) {
 	if s.Design == nil {
-		respond(w, nil, fault.New(fault.Internal, "外觀服務未設定"))
+		respond(w, nil, fault.New(fault.Internal, "design service is not configured"))
 		return
 	}
 	value, err := s.Design.Load()
@@ -18,7 +18,7 @@ func (s *Server) loadDesign(w http.ResponseWriter, r *http.Request) {
 }
 func (s *Server) saveDesign(w http.ResponseWriter, r *http.Request) {
 	if s.Design == nil {
-		respond(w, nil, fault.New(fault.Internal, "外觀服務未設定"))
+		respond(w, nil, fault.New(fault.Internal, "design service is not configured"))
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, design.MaxBytes)

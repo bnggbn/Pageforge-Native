@@ -40,7 +40,7 @@ func (s *Store) safe(parts ...string) (string, error) {
 	file := filepath.Join(append([]string{s.root}, parts...)...)
 	relative, err := filepath.Rel(s.root, file)
 	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(os.PathSeparator)) {
-		return "", fault.New(fault.UnsafePath, "資料夾路徑無效")
+		return "", fault.New(fault.UnsafePath, "invalid directory path")
 	}
 	current := s.root
 	for _, part := range strings.Split(relative, string(os.PathSeparator)) {
@@ -53,7 +53,7 @@ func (s *Store) safe(parts ...string) (string, error) {
 			return "", fault.Read(err)
 		}
 		if stat.Mode()&os.ModeSymlink != 0 {
-			return "", fault.New(fault.UnsafePath, "不允許 library 連結檔")
+			return "", fault.New(fault.UnsafePath, "library links are not allowed")
 		}
 	}
 	return file, nil
@@ -93,14 +93,14 @@ func readBounded(file string, limit int64) ([]byte, error) {
 		return nil, fault.Read(err)
 	}
 	if !stat.Mode().IsRegular() {
-		return nil, fault.New(fault.StorageCorrupt, "資料檔不是一般檔案")
+		return nil, fault.New(fault.StorageCorrupt, "data file is not a regular file")
 	}
 	if stat.Size() > limit {
-		return nil, fault.New(fault.LimitExceeded, "資料檔超過讀取容量")
+		return nil, fault.New(fault.LimitExceeded, "data file exceeds the read limit")
 	}
 	data, err := io.ReadAll(io.LimitReader(stream, limit+1))
 	if err == nil && int64(len(data)) > limit {
-		return nil, fault.New(fault.LimitExceeded, "資料檔超過讀取容量")
+		return nil, fault.New(fault.LimitExceeded, "data file exceeds the read limit")
 	}
 	return data, fault.Read(err)
 }
@@ -116,7 +116,7 @@ func (s *Store) readJSON(file string, value any) error {
 // The file-level Lstat preserves rejection of links without repeating four parent checks per revision.
 func revisionPath(folder, id string) (string, error) {
 	if !uuid.MatchString(id) {
-		return "", fault.New(fault.StorageCorrupt, "版本 ID 無效")
+		return "", fault.New(fault.StorageCorrupt, "invalid revision ID")
 	}
 	file := filepath.Join(folder, id+".json")
 	stat, err := os.Lstat(file)
@@ -124,7 +124,7 @@ func revisionPath(folder, id string) (string, error) {
 		return "", fault.Read(err)
 	}
 	if !stat.Mode().IsRegular() {
-		return "", fault.New(fault.StorageCorrupt, "版本必須是一般檔案，不允許連結")
+		return "", fault.New(fault.StorageCorrupt, "revision must be a regular file; links are not allowed")
 	}
 	return file, nil
 }

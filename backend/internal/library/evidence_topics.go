@@ -11,6 +11,8 @@ import (
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 )
 
+// The default topic label is persisted legacy data, not a diagnostic message.
+// Keep its bytes until a separate schema migration moves the label to the client.
 func migrateEvidence(w model.EvidenceWall) model.EvidenceWall {
 	if w.SchemaVersion == 1 {
 		w.Topics = []model.EvidenceTopic{{ID: model.AllEvidenceTopic, Name: "全部線索", Cards: w.Cards, Edges: w.Edges}}
@@ -67,17 +69,17 @@ func (s *Store) backupEvidenceV1(id, file string) error {
 
 func (s *Store) validateEvidence(w model.EvidenceWall, notes map[string]bool) error {
 	if w.Revision != "" && !uuid.MatchString(w.Revision) {
-		return fmt.Errorf("線索牆版本無效")
+		return fmt.Errorf("invalid evidence wall revision")
 	}
 	if w.SchemaVersion == 1 {
 		if w.Topics != nil || w.ActiveTopic != "" {
-			return fmt.Errorf("線索牆版本欄位無效")
+			return fmt.Errorf("invalid evidence wall schema fields")
 		}
 		return s.validateEvidenceTopic(model.EvidenceTopic{Cards: w.Cards, Edges: w.Edges}, notes)
 	}
 	c := s.config.EvidenceWall
 	if w.SchemaVersion != 2 || w.Cards != nil || w.Edges != nil || len(w.Topics) < 1 || len(w.Topics) > c.MaxTopics {
-		return fmt.Errorf("線索牆主題格式或容量無效")
+		return fmt.Errorf("invalid evidence topic format or size")
 	}
 	ids, names := map[string]bool{}, map[string]bool{}
 	for _, topic := range w.Topics {
@@ -88,10 +90,10 @@ func (s *Store) validateEvidence(w model.EvidenceWall, notes map[string]bool) er
 			name != topic.Name ||
 			len([]rune(name)) > c.TopicNameCharacters ||
 			names[strings.ToLower(name)] {
-			return fmt.Errorf("線索主題名稱或識別碼無效")
+			return fmt.Errorf("invalid evidence topic name or ID")
 		}
 		if topic.ID == model.AllEvidenceTopic && topic.Name != "全部線索" {
-			return fmt.Errorf("預設線索主題不可改名")
+			return fmt.Errorf("the default evidence topic cannot be renamed")
 		}
 		ids[topic.ID], names[strings.ToLower(name)] = true, true
 		if err := s.validateEvidenceTopic(topic, notes); err != nil {
@@ -99,7 +101,7 @@ func (s *Store) validateEvidence(w model.EvidenceWall, notes map[string]bool) er
 		}
 	}
 	if !ids[model.AllEvidenceTopic] || !ids[w.ActiveTopic] {
-		return fmt.Errorf("缺少預設或目前線索主題")
+		return fmt.Errorf("the default or active evidence topic is missing")
 	}
 	return nil
 }
@@ -107,7 +109,7 @@ func (s *Store) validateEvidence(w model.EvidenceWall, notes map[string]bool) er
 func (s *Store) validateEvidenceTopic(t model.EvidenceTopic, notes map[string]bool) error {
 	c := s.config.EvidenceWall
 	if t.Cards == nil || t.Edges == nil || len(t.Cards) > c.MaxCards || len(t.Edges) > c.MaxEdges {
-		return fmt.Errorf("線索卡片或紅線容量無效")
+		return fmt.Errorf("invalid evidence card or edge capacity")
 	}
 	cards := map[string]bool{}
 	for _, card := range t.Cards {
@@ -122,7 +124,7 @@ func (s *Store) validateEvidenceTopic(t model.EvidenceTopic, notes map[string]bo
 			card.Y < 0 ||
 			card.X > float64(c.CanvasWidth-280) ||
 			card.Y > float64(c.CanvasHeight-240) {
-			return fmt.Errorf("線索卡片位置或筆記來源無效")
+			return fmt.Errorf("invalid evidence card position or note source")
 		}
 		cards[card.NoteID] = true
 	}
@@ -140,7 +142,7 @@ func (s *Store) validateEvidenceTopic(t model.EvidenceTopic, notes map[string]bo
 			!cards[edge.From] ||
 			!cards[edge.To] ||
 			len([]rune(edge.Label)) > 200 {
-			return fmt.Errorf("紅線端點或標籤無效")
+			return fmt.Errorf("invalid edge endpoints or label")
 		}
 		ids[edge.ID], pairs[pair] = true, true
 	}

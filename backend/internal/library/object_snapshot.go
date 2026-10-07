@@ -14,7 +14,7 @@ func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectR
 	source []byte, consumed, budget int64, key, metaKey, snapshotID string, allowCache bool) (model.Book, error) {
 	verifier, err := vax.NewVerifier(b.Document, vax.Hash(source))
 	if err != nil {
-		return b, fault.Ensure(fault.StorageCorrupt, "VAX 來源驗證失敗", err)
+		return b, fault.Ensure(fault.StorageCorrupt, "VAX source verification failed", err)
 	}
 	textLimit := int64(s.config.Limits.TextMiB) * 1024 * 1024
 	notesLimit := int64(s.config.Limits.SnapshotNotesMiB) * 1024 * 1024
@@ -24,7 +24,7 @@ func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectR
 		// Physical dependencies and one expanded snapshot are separately bounded.
 		// Decoding/canonicalizing notes needs temporary buffers, not retained history arrays.
 		if record.ContentRoot.Bytes+record.NotesRoot.Bytes*8 > budget-consumed-session.Bytes {
-			return b, fault.New(fault.LimitExceeded, "單一版本還原超過容量限制")
+			return b, fault.New(fault.LimitExceeded, "single revision reconstruction exceeds the size limit")
 		}
 		textHash, found := textHashes[record.ContentRoot.Hash]
 		if !found {
@@ -42,14 +42,14 @@ func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectR
 			}
 			canonical, canonicalErr := vax.Canonical(notes)
 			if canonicalErr != nil {
-				return b, fault.Ensure(fault.StorageCorrupt, "筆記驗證失敗", canonicalErr)
+				return b, fault.Ensure(fault.StorageCorrupt, "note verification failed", canonicalErr)
 			}
 			notesHash = vax.Hash([]byte(canonical))
 			noteHashes[record.NotesRoot.Hash] = notesHash
 		}
 		revision := record.Revision
 		if err = verifier.AppendHashes(revision, textHash, notesHash); err != nil {
-			return b, fault.Ensure(fault.StorageCorrupt, "VAX 歷史驗證失敗", err)
+			return b, fault.Ensure(fault.StorageCorrupt, "VAX history verification failed", err)
 		}
 		b.History = append(b.History, model.RevisionSummary{ID: revision.ID, Kind: revision.Kind, CreatedAt: revision.CreatedAt})
 	}
@@ -73,7 +73,7 @@ func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectR
 		break
 	}
 	if len(b.Revisions) == 0 {
-		return b, fault.New(fault.NotFound, "版本不在此主線")
+		return b, fault.New(fault.NotFound, "revision does not belong to this document history")
 	}
 	b.RevisionCount = len(records)
 	files := session.Files()
@@ -117,7 +117,7 @@ func (s *Store) readSnapshot(id, revision string) (model.Book, error) {
 		}
 	}
 	if !present {
-		return model.Book{}, fault.New(fault.NotFound, "版本不在此主線")
+		return model.Book{}, fault.New(fault.NotFound, "revision does not belong to this document history")
 	}
 	if m.RevisionStorage != objectRevisionFormat {
 		b, err := s.readBook(id)
@@ -151,7 +151,7 @@ func (s *Store) LoadRevision(id, revision string) (model.Revision, error) {
 			return r, nil
 		}
 	}
-	return model.Revision{}, fault.New(fault.NotFound, "版本不在此主線")
+	return model.Revision{}, fault.New(fault.NotFound, "revision does not belong to this document history")
 }
 
 // All record/source/object bytes have already been rechecked against the cached
@@ -178,7 +178,7 @@ func (s *Store) snapshotFromVerified(head model.Book, m model.Manifest, records 
 		b.Progress = s.progress(m)
 		return b, nil
 	}
-	return b, fault.New(fault.NotFound, "版本不在此主線")
+	return b, fault.New(fault.NotFound, "revision does not belong to this document history")
 }
 
 func projectLegacySnapshot(b model.Book, id string) (model.Book, error) {
@@ -191,7 +191,7 @@ func projectLegacySnapshot(b model.Book, id string) (model.Book, error) {
 		}
 	}
 	if selected == nil {
-		return model.Book{}, fault.New(fault.NotFound, "版本不在此主線")
+		return model.Book{}, fault.New(fault.NotFound, "revision does not belong to this document history")
 	}
 	b.History, b.RevisionCount = history, len(b.Revisions)
 	b.Revisions = []model.Revision{*selected}

@@ -19,7 +19,7 @@ backend/
   internal/library/          檔案邊界、匯入、版本、草稿與進度
   internal/content/          typed hash 物件、正文樹、有界集合與依賴驗證
   internal/fault/            穩定錯誤代碼、原因鏈；不依賴 HTTP
-  internal/vax/              vax-sdk 1.0.0 的 canonical bytes 與 SHA-256 協定
+  internal/vax/              官方 VAX Go release 的 Pageforge 文件事件轉接層
   internal/design/           嚴格外觀 JSON、revision 衝突檢查與原子保存
   internal/compare/          有輸入上限與 deadline 的文字 diff
   internal/api/              本機 API 與請求驗證
@@ -46,7 +46,7 @@ library 使用既有 `server.lock` 排他檔，避免 Web 與原生版同時写�
 草稿有基準 revision ID 與版本 token；過期寫入不覆蓋另一份草稿。
 進度寫入獨立 progress.json，文字修改的 epoch 使舊位置失效。
 
-VAX 依實際 vax-sdk 1.0.0 原始碼實作：UTF-16 非 ASCII escape、排序與兩階段 SHA-256。
+VAX canonical、genesis 與 SAI 直接依賴官方 Go SDK v0.0.0；internal/vax 只處理 Pageforge 文件事件與逐版快照比對，不維護第二份協定實作。[依賴與相容驗收](VAX_DEPENDENCY.md)。
 Pageforge envelope 的數值只允許安全整數 timestamp；未知浮點 envelope 拒絕。
 一般 Go Load／Commit 的 Book 只帶所選快照與 History／RevisionCount；完整歷史改用明確的 LoadHistory／CommitHistory，舊 HTTP 回應保持相容。objects-v1 未命中仍驗證全部歷史，正文按樹葉串流雜湊，筆記逐版 decode／canonical 後釋放；只還原選定的正文與筆記；reader／cache 預算亦計入目前章節／工作表投影，不能因正文 root 很小就漏算它們。內容未變且 head／metadata／依賴描述在快取容量內時，重新雜湊所有依賴後重用已驗證快照；查看舊版只還原該版並保留 head 快取。讀取 session 仍暫存去重物件，實體歷史預算不取消；legacy 仍完整解碼。快取只有最近一本且不落盤，不以 mtime 當信任依據。reader API 只傳目前版本與歷史摘要，按 ID 取舊草稿基準；摘要分頁仍待補。設定、效能限制與差異儲存遷移方案見 [版本儲存評估](VERSION_STORAGE.md)。
 驗證沒有簽章／外部可信 head，不提供對整鏈重寫或尾端截斷的保護。

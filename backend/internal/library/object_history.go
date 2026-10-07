@@ -52,7 +52,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		consumed += documentProjectionBytes(m.Document)
 	}
 	if consumed > budget {
-		return b, fault.New(fault.LimitExceeded, "目前文件投影超過容量限制")
+		return b, fault.New(fault.LimitExceeded, "current document projection exceeds the size limit")
 	}
 	versions, err := s.safe(relative, "versions")
 	if err != nil {
@@ -93,7 +93,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		for _, record := range records {
 			if record.ContentRoot.Bytes < 0 || record.ContentRoot.Bytes > textLimit ||
 				record.NotesRoot.Bytes < 0 || record.NotesRoot.Bytes > notesLimit {
-				return b, fault.New(fault.LimitExceeded, "版本展開容量超過限制")
+				return b, fault.New(fault.LimitExceeded, "expanded revision exceeds the size limit")
 			}
 		}
 		if err = objects.VerifyFiles(cached.objectFiles, budget-consumed, s.config.Storage.ObjectCount); err != nil {
@@ -106,7 +106,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 			}
 			for _, record := range records {
 				if record.ContentRoot.Bytes+record.NotesRoot.Bytes*8 > budget-consumed-physical {
-					return b, fault.New(fault.LimitExceeded, "單一版本還原超過容量限制")
+					return b, fault.New(fault.LimitExceeded, "single revision reconstruction exceeds the size limit")
 				}
 			}
 			if snapshotID != cached.snapshotID {
@@ -138,7 +138,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		return b, fault.Read(err)
 	}
 	if vax.Hash(source) != hex.EncodeToString(sourceHash) {
-		return b, fault.New(fault.StorageCorrupt, "原始檔在驗證時被外部修改")
+		return b, fault.New(fault.StorageCorrupt, "original file changed externally during verification")
 	}
 	if snapshotID != "" {
 		return s.objectSnapshot(b, m, records, session, source, consumed, budget, key, metaKey, snapshotID, allowCache)
@@ -152,7 +152,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		text, found := texts[record.ContentRoot.Hash]
 		if !found {
 			if record.ContentRoot.Bytes > budget-retained {
-				return b, fault.New(fault.LimitExceeded, "還原歷史超過記憶體容量限制")
+				return b, fault.New(fault.LimitExceeded, "reconstructed history exceeds the memory limit")
 			}
 			retained += record.ContentRoot.Bytes
 			text, err = session.Text(record.ContentRoot, textLimit)
@@ -164,7 +164,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		notes, found := notesByHash[record.NotesRoot.Hash]
 		if !found {
 			if record.NotesRoot.Bytes > (budget-retained)/2 {
-				return b, fault.New(fault.LimitExceeded, "還原筆記超過容量限制")
+				return b, fault.New(fault.LimitExceeded, "reconstructed notes exceed the size limit")
 			}
 			retained += record.NotesRoot.Bytes * 2
 			payload, err := session.Notes(record.NotesRoot, notesLimit)
@@ -179,7 +179,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		// Five Go string descriptors per Note; avoid aliasing mutable slices between revisions.
 		weight := int64(len(notes)) * 80
 		if weight > budget-retained {
-			return b, fault.New(fault.LimitExceeded, "還原筆記索引超過容量限制")
+			return b, fault.New(fault.LimitExceeded, "reconstructed note index exceeds the size limit")
 		}
 		retained += weight
 		revision.Content = text
@@ -187,7 +187,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		b.Revisions = append(b.Revisions, revision)
 	}
 	if err = vax.Verify(b.Document, source, b.Revisions); err != nil {
-		return b, fault.Ensure(fault.StorageCorrupt, "VAX 歷史驗證失敗", err)
+		return b, fault.Ensure(fault.StorageCorrupt, "VAX history verification failed", err)
 	}
 	if allowCache && retained <= int64(s.config.Storage.VerifiedCacheMiB)*1024*1024 {
 		s.cacheMu.Lock()
@@ -208,10 +208,10 @@ func fingerprintObjectSource(file string, limit int64) ([]byte, int64, error) {
 		return nil, 0, fault.Read(err)
 	}
 	if !info.Mode().IsRegular() {
-		return nil, 0, fault.New(fault.StorageCorrupt, "原始檔不是一般檔案")
+		return nil, 0, fault.New(fault.StorageCorrupt, "original file is not a regular file")
 	}
 	if info.Size() > limit {
-		return nil, 0, fault.New(fault.LimitExceeded, "原始檔超過容量")
+		return nil, 0, fault.New(fault.LimitExceeded, "original file exceeds the size limit")
 	}
 	stream, err := os.Open(file)
 	if err != nil {
@@ -224,7 +224,7 @@ func fingerprintObjectSource(file string, limit int64) ([]byte, int64, error) {
 		return nil, 0, fault.Read(err)
 	}
 	if size > limit {
-		return nil, 0, fault.New(fault.LimitExceeded, "原始檔超過容量")
+		return nil, 0, fault.New(fault.LimitExceeded, "original file exceeds the size limit")
 	}
 	return hash.Sum(nil), size, nil
 }

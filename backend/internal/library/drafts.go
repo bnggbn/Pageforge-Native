@@ -46,7 +46,7 @@ func (s *Store) drafts(id string) ([]model.Draft, error) {
 		}
 		count++
 		if count > s.config.Limits.WorkingCopyCount {
-			return nil, fmt.Errorf("草稿數超過設定容量")
+			return nil, fmt.Errorf("draft count exceeds the configured limit")
 		}
 		limit := int64(s.config.Storage.RecordMiB) * 1024 * 1024
 		remaining := int64(s.config.Storage.HistoryMiB)*1024*1024 - total
@@ -63,7 +63,7 @@ func (s *Store) drafts(id string) ([]model.Draft, error) {
 			return nil, err
 		}
 		if copy.DocumentID != id || copy.ID+".json" != entry.Name() {
-			return nil, fmt.Errorf("草稿來源無效")
+			return nil, fmt.Errorf("invalid draft source")
 		}
 		if copy.BranchID == "" {
 			result = append(result, copy)
@@ -88,7 +88,7 @@ func (s *Store) SaveDraft(id string, copy model.Draft, expectedVersion *string) 
 	if copy.DocumentID != id || !uuid.MatchString(copy.ID) || !validBase || copy.BranchID != "" ||
 		len([]rune(copy.Body)) > s.config.Limits.NoteCharacters || len([]rune(copy.Quote)) > s.config.Limits.QuoteCharacters ||
 		len([]rune(copy.Location)) > s.config.Limits.LocationCharacters || (copy.Content != nil && len(*copy.Content) > s.config.Limits.TextMiB*1024*1024) {
-		return copy, fmt.Errorf("草稿來源、內容或容量無效")
+		return copy, fmt.Errorf("invalid draft source, content or size")
 	}
 	file, err := s.safe("books", id, "drafts", copy.ID+".json")
 	if err != nil {
@@ -122,7 +122,7 @@ func (s *Store) SaveDraft(id string, copy model.Draft, expectedVersion *string) 
 			}
 		}
 		if count >= s.config.Limits.WorkingCopyCount {
-			return copy, fmt.Errorf("草稿已達設定上限")
+			return copy, fmt.Errorf("draft count has reached the configured limit")
 		}
 	}
 	copy.Version = vax.UUID()
@@ -133,7 +133,7 @@ func (s *Store) RemoveDraft(id, draftID, version string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if !uuid.MatchString(draftID) {
-		return fmt.Errorf("草稿 ID 無效")
+		return fmt.Errorf("invalid draft ID")
 	}
 	if _, err := s.manifest(id); err != nil {
 		return err

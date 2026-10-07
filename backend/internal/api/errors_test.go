@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/bnggbn/Pageforge-Native/backend/internal/config"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
@@ -49,6 +50,9 @@ func TestHTTPErrorMappingKeepsDependencyAbsenceOutOf404(t *testing.T) {
 		assertErrorResponse(t, w, test.status, test.code)
 		if strings.Contains(w.Body.String(), cause.Path) || strings.Contains(w.Body.String(), "raw hash") {
 			t.Fatal("internal storage diagnostic leaked")
+		}
+		if strings.IndexFunc(w.Body.String(), func(r rune) bool { return unicode.Is(unicode.Han, r) }) >= 0 {
+			t.Fatal("HTTP error localization belongs to the client")
 		}
 	}
 }

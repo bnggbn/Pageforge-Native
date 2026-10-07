@@ -118,30 +118,30 @@ func Load(root string) (Config, error) {
 		c.EvidenceWall.CanvasHeight < 1000 ||
 		c.EvidenceWall.CanvasHeight > 20000 ||
 		c.EvidenceWall.SaveDebounceMs < 100 {
-		return c, fmt.Errorf("線索牆設定無效")
+		return c, fmt.Errorf("invalid evidence wall configuration")
 	}
 	if c.Reading.EditorSectionUnits < 1000 || c.Reading.EditorSectionUnits > 65536 {
-		return c, fmt.Errorf("編輯分節設定無效")
+		return c, fmt.Errorf("invalid editor section configuration")
 	}
 	if c.Transport.RequestTimeoutMs < 1000 || c.Transport.RequestTimeoutMs > 120000 ||
 		c.Transport.ResponseMiB < 1 || c.Transport.ResponseMiB > 512 {
-		return c, fmt.Errorf("HTTP 讀取設定無效")
+		return c, fmt.Errorf("invalid HTTP read configuration")
 	}
 	if (c.Storage.RevisionFormat != "legacy" && c.Storage.RevisionFormat != "objects-v1") ||
 		c.Storage.ObjectCount < 1 || c.Storage.ObjectCount > 1000000 ||
 		c.Storage.InlineObjectBytes < 0 || c.Storage.InlineObjectBytes > 65536 ||
 		c.Storage.ObjectCatalogMiB < 1 || c.Storage.ObjectCatalogMiB > 32 {
-		return c, fmt.Errorf("內容物件設定無效")
+		return c, fmt.Errorf("invalid content object configuration")
 	}
 	if c.Storage.RecordMiB < 1 || c.Storage.RecordMiB > 512 ||
 		c.Storage.HistoryMiB < c.Storage.RecordMiB || c.Storage.HistoryMiB > 4096 ||
 		c.Storage.VerifiedCacheMiB < 0 || c.Storage.VerifiedCacheMiB > 512 {
-		return c, fmt.Errorf("歷史讀取與快取設定無效")
+		return c, fmt.Errorf("invalid history read or cache configuration")
 	}
 	if c.Paths.LibraryRoot == "" || c.Limits.TextMiB < 1 || c.Limits.RequestMiB < c.Limits.TextMiB*2 ||
 		c.Limits.RevisionCount < 1 || c.Limits.WorkingCopyCount < 1 || c.Diff.MaxCharacters < 1 ||
 		c.Diff.TimeoutMs < 1 || c.Reading.DefaultFontSize < 1 || c.Reading.DraftDebounceMs < 1 {
-		return c, fmt.Errorf("設定容量、閱讀或 diff 限制無效")
+		return c, fmt.Errorf("invalid capacity, reading or diff limits")
 	}
 	if !filepath.IsAbs(c.Paths.LibraryRoot) {
 		c.Paths.LibraryRoot = filepath.Join(root, c.Paths.LibraryRoot)

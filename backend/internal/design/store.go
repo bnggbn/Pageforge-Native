@@ -11,7 +11,7 @@ import (
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 )
 
-var ErrConflict = fault.New(fault.Conflict, "外觀已被其他視窗修改，請重新載入後再套用")
+var ErrConflict = fault.New(fault.Conflict, "design changed in another window; reload before applying changes")
 
 type Store struct {
 	root string
@@ -34,7 +34,7 @@ func (s *Store) load() (Snapshot, error) {
 	}
 	document, err := Decode(data)
 	if err != nil {
-		return Snapshot{}, fmt.Errorf("外觀設定無效：%w", err)
+		return Snapshot{}, fmt.Errorf("invalid design configuration: %w", err)
 	}
 	return snapshot(document), nil
 }
@@ -46,7 +46,7 @@ func read(path string) ([]byte, error) {
 	defer file.Close()
 	data, err := io.ReadAll(io.LimitReader(file, MaxBytes+1))
 	if len(data) > MaxBytes {
-		return nil, fmt.Errorf("外觀設定超過 16 KiB")
+		return nil, fmt.Errorf("design configuration exceeds 16 KiB")
 	}
 	return data, err
 }

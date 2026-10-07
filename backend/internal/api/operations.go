@@ -21,7 +21,7 @@ func (s *Server) importBook(w http.ResponseWriter, r *http.Request) {
 	}
 	bytes, err := base64.StdEncoding.DecodeString(input.Source)
 	if err != nil {
-		respond(w, nil, fault.Wrap(fault.InvalidRequest, "文件來源編碼無效", err))
+		respond(w, nil, fault.Wrap(fault.InvalidRequest, "invalid document source encoding", err))
 		return
 	}
 	id, duplicate, err := s.Store.Import(input.Filename, bytes)

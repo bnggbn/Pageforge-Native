@@ -31,19 +31,62 @@ http.Response jsonResponse(Object body, int status) => http.Response(
 );
 
 void main() {
+  test('known codes localize display text without discarding diagnostics', () {
+    const codes = [
+      'INVALID_REQUEST',
+      'UNSAFE_PATH',
+      'NOT_FOUND',
+      'CONFLICT',
+      'LIMIT_EXCEEDED',
+      'UNAUTHORIZED',
+      'FORBIDDEN',
+      'METHOD_NOT_ALLOWED',
+      'STORAGE_MISSING',
+      'STORAGE_CORRUPT',
+      'STORAGE_IO',
+      'UNSUPPORTED_STORAGE',
+      'INTERNAL_ERROR',
+    ];
+    for (final code in codes) {
+      final error = ApiException.fromResponse({
+        'code': code,
+        'error': 'English diagnostic: $code',
+      }, 500);
+      expect(error.code, code);
+      expect(error.diagnostic, 'English diagnostic: $code');
+      expect(error.message, isNot(contains('English diagnostic')));
+      expect(error.toString(), error.message);
+      expect(error.isConflict, code == 'CONFLICT');
+    }
+    final noMessage = ApiException.fromResponse({
+      'code': 'STORAGE_MISSING',
+    }, 500);
+    expect(noMessage.message, contains('書庫依賴檔案缺失'));
+    expect(noMessage.diagnostic, isNull);
+  });
+
   test(
     'both repositories carry codes and tolerate legacy or malformed bodies',
     () async {
       final origin = Uri.parse('http://127.0.0.1:1234');
       final responses = [
-        jsonResponse({'code': 'STORAGE_CORRUPT', 'error': '驗證失敗'}, 500),
+        jsonResponse({
+          'code': 'STORAGE_CORRUPT',
+          'error': 'Library integrity verification failed.',
+        }, 500),
         jsonResponse({'code': 'FUTURE_ERROR', 'error': '稍後新增'}, 409),
         jsonResponse({'error': '舊後端'}, 409),
         http.Response('<html>server error</html>', 500),
         jsonResponse({'code': 9, 'error': null}, 400),
       ];
       final codes = ['STORAGE_CORRUPT', 'FUTURE_ERROR', null, null, null];
-      final messages = ['驗證失敗', '稍後新增', '舊後端', '後端請求失敗', '後端請求失敗'];
+      final messages = [
+        '書庫內容驗證失敗，請檢查檔案或備份。',
+        '稍後新增',
+        '舊後端',
+        '後端請求失敗',
+        '後端請求失敗',
+      ];
       for (var i = 0; i < responses.length; i++) {
         final library = HttpLibraryRepository(
           origin,

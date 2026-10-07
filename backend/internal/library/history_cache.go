@@ -41,10 +41,10 @@ func (s *Store) historyFingerprint(m model.Manifest, original string) (string, i
 			return fault.Read(err)
 		}
 		if !stat.Mode().IsRegular() {
-			return fault.New(fault.StorageCorrupt, "歷史檔案不是一般檔案")
+			return fault.New(fault.StorageCorrupt, "history file is not a regular file")
 		}
 		if stat.Size() > limit {
-			return fault.New(fault.LimitExceeded, "歷史資料超過讀取容量")
+			return fault.New(fault.LimitExceeded, "history data exceeds the read limit")
 		}
 		hash := sha256.New()
 		remaining := int64(s.config.Storage.HistoryMiB)*1024*1024 - total
@@ -56,7 +56,7 @@ func (s *Store) historyFingerprint(m model.Manifest, original string) (string, i
 			return fault.Read(err)
 		}
 		if count > limit {
-			return fault.New(fault.LimitExceeded, "整本歷史超過讀取容量；請調整 storage.historyMiB")
+			return fault.New(fault.LimitExceeded, "aggregate history exceeds the read limit; adjust storage.historyMiB")
 		}
 		total += count
 		digest.Write(hash.Sum(nil))

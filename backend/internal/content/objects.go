@@ -237,7 +237,7 @@ func (s *Store) put(kind byte, payload []byte, size int64) (Ref, error) {
 			if !errors.Is(readErr, os.ErrNotExist) {
 				return Ref{}, fault.Read(readErr)
 			}
-			return Ref{}, fault.Wrap(fault.StorageIO, "無法發布內容物件", err)
+			return Ref{}, fault.Wrap(fault.StorageIO, "could not publish content object", err)
 		}
 		if !bytes.Equal(existing, data) {
 			return Ref{}, fault.New(fault.StorageCorrupt, "object collision")

@@ -48,7 +48,7 @@ library/books/{documentId}/
 - library/revision_objects.go：實體紀錄與原有 Revision 的轉接；布局只取 head 筆記，不讀正文樹。
 - library/object_history.go：原檔／版本／物件 bytes 驗證、session 與快取邊界；完整歷史稽核另有 aggregate 還原預算。
 - library/object_snapshot.go：一般 Load／Commit 只留所選正文／筆記與歷史摘要；舊版按需還原，不淘汰已驗 head。
-- vax/history.go：逐版消費已驗內容的全文／canonical 筆記雜湊，保持原 envelope 與 SAI 協定。
+- vax/history.go：Pageforge 轉接層逐版消費已驗內容的全文／canonical 筆記雜湊；canonical、genesis、SAI 由官方 Go SDK v0.0.0 提供，保持既有 fixture 的 envelope 與 SAI。見 [依賴界線](VAX_DEPENDENCY.md)。
 - library/versions.go／import.go：既有命令與 CAS；先保存物件／版本，驗證可讀性與容量，再發布 manifest 或新書。
 
 PFCO v1 bytes 是 ASCII PFCO + 版本 byte 1 + kind byte + payload。kind 0 為 UTF-8 正文葉，kind 1 為有序分支，kind 2 為筆記 JSON。物件 ID 是全部上述 bytes 的 SHA-256，型別與版本都在 hash 中，正文／筆記不能互換。

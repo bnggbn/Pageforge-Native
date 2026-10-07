@@ -40,7 +40,7 @@ func (s *Store) importIndex() (map[string]string, error) {
 }
 func (s *Store) importWithIndex(filename string, source []byte, index map[string]string) (string, bool, error) {
 	if filename != filepath.Base(filename) || strings.ContainsAny(filename, "\\\x00") {
-		return "", false, fault.New(fault.InvalidRequest, "檔名無效")
+		return "", false, fault.New(fault.InvalidRequest, "invalid filename")
 	}
 	extension := strings.ToLower(filepath.Ext(filename))
 	format := ""
@@ -50,15 +50,15 @@ func (s *Store) importWithIndex(filename string, source []byte, index map[string
 		format = "text"
 	}
 	if format == "" {
-		return "", false, fault.New(fault.InvalidRequest, "此階段匯入支援 Markdown／TXT；其他格式可讀取既有 library 投影")
+		return "", false, fault.New(fault.InvalidRequest, "import currently supports Markdown and TXT; other formats require existing library projections")
 	}
 	text := strings.TrimPrefix(string(source), "\ufeff")
 	if len(source) > s.config.Limits.TextMiB*1024*1024 {
-		return "", false, fault.New(fault.LimitExceeded, "文件超過設定容量")
+		return "", false, fault.New(fault.LimitExceeded, "document exceeds the configured limit")
 	}
 	if len(source) == 0 || !utf8.Valid(source) ||
 		strings.TrimSpace(text) == "" || strings.ContainsRune(text, 0) {
-		return "", false, fault.New(fault.InvalidRequest, "需為非空白 UTF-8 文字，且不可超過設定容量")
+		return "", false, fault.New(fault.InvalidRequest, "content must be nonempty UTF-8 text within the configured limit")
 	}
 	hash := vax.Hash(source)
 	if id, found := index[format+":"+hash]; found {

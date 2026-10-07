@@ -110,3 +110,7 @@ TextDocumentView／閱讀器選取維持完整佈局，原有 Markdown／TXT／E
 6. catalog 整檔改寫、正式提交前後歷史驗證、局部樹更新／正式 root 型事件：先按實際收益排程，不搶在 UI 體驗之前。
 
 本輪完整驗收結果與 UI 對照將隨實際完成更新；不把歷史基準或外部 review 算成本次已重現。
+
+## 官方 SDK 與錯誤語言後續更正
+
+2026-10-07：VAX canonical／genesis／SAI 改為直接使用官方 Go SDK v0.0.0，移除先前本地相容實作；後端診斷及 HTTP error 使用英文，Flutter 依代碼提供中文顯示並保留 diagnostic。[依賴、相容範圍與本輪驗收](../VAX_DEPENDENCY.md)。本文既有數字保持原測量 runtime；沒有將官方 SDK 切換的回歸測試視為新的效能量測。
