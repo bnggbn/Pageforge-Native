@@ -2,6 +2,7 @@
 
 ```text
 apps/desktop/lib/
+  app_session.dart           啟動順序與連線／外觀／sidecar 資源所有權
   platform/                  Go 程序啟動與生命週期
   data/                      immutable 畫面模型、HTTP repository 合約
   features/library/          書架 ViewModel 與介面
@@ -37,6 +38,8 @@ working copy、reading position 與 evidence wall 各自控制防抖與落盤；
 線索主題的卡片及紅線按主題隔離；整份主題文件使用同一 CAS token 原子保存，避免索引與畫布多檔更新不一致。
 線索牆持久化檔案獨立於 VAX 節點，使用布局 token 與文件 head 防止覆蓋過期更新；見 [資料合約](EVIDENCE_WALL.md)。
 表格使用固定列高的 ListView.builder，只建立可見列；完整內容另開選取視窗。
+
+AppSession.open 依序啟動後端、建立 repository、載入 Flutter 外觀。AppSession.close 共用同一個 Future，釋放外觀、HTTP client 與後端；Bootstrap 只協調畫面、單次啟動／重試及 pending session 的關閉，不持有個別 client。Go serve 以 defer 對應 library、listener、server 的取得與釋放；ready 寫入失敗也完整清理。邊界與測試見 [啟動生命週期](STARTUP.md)。
 
 桌面程序啟動 Go sidecar，Go 監聽 127.0.0.1 的動態 port。
 隨機 256-bit token 經 stdout 管線提供 Dart，每個 API 請求帶 Bearer token。

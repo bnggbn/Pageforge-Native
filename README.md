@@ -20,6 +20,8 @@
 直接啟動 Release 產物時，library 預設相對於產物資料夾；開發命令則使用專案內的 library。
 可設定 `PAGEFORGE_PROJECT_ROOT` 指向專案／設定資料夾，或用 `PAGEFORGE_LIBRARY_ROOT` 指定書架。
 
+啟動依序執行「Go 就緒 → 建立連線 → Flutter 載入外觀 → 書架」。AppSession 統一持有並清理資源，啟動失敗可重試，啟動中關窗會等待初始化及清理完成；外觀讀取失敗保留預設值。正常退出會等 Go 釋放書庫鎖；強制終止後失效鎖回收仍待實作。[啟動生命週期](docs/STARTUP.md)。
+
 未開啟 Windows Developer Mode 時，build 腳本會針對 Flutter plugin 目錄建立 junction，
 不變更系統設定。首次先執行 build，dev 使用已解析的套件。
 

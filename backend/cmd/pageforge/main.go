@@ -29,7 +29,18 @@ func run() error {
 	root := flag.String("root", ".", "project/config directory")
 	parentPipe := flag.Bool("parent-pipe", false, "exit when parent closes stdin")
 	flag.Parse()
-	c, err := config.Load(*root)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	var parent io.Reader
+	if *parentPipe {
+		parent = os.Stdin
+	}
+	return serve(ctx, *root, parent, os.Stdout)
+}
+
+// serve owns the library, listener and server until shutdown has completed.
+func serve(ctx context.Context, root string, parent io.Reader, ready io.Writer) error {
+	c, err := config.Load(root)
 	if err != nil {
 		return err
 	}
@@ -42,22 +53,32 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer listener.Close()
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	application := api.New(store, c, cancel)
 	application.ClientSettings = settings.New(
-		filepath.Join(*root, "pageforge.design.json"),
-		filepath.Join(*root, "pageforge.design.local.json"), 16*1024,
+		filepath.Join(root, "pageforge.design.json"),
+		filepath.Join(root, "pageforge.design.local.json"), 16*1024,
 	)
-	server := &http.Server{Handler: application.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second}
-	if *parentPipe {
-		go func() { io.Copy(io.Discard, os.Stdin); cancel() }()
+	server := &http.Server{
+		Handler:           application.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
+	defer server.Close()
 	failure := make(chan error, 1)
 	go func() { failure <- server.Serve(listener) }()
-	// Only the parent reads this pipe. Do not put credentials in command line arguments or logs.
-	if err = json.NewEncoder(os.Stdout).Encode(map[string]string{"origin": "http://" + listener.Addr().String(), "token": application.Token}); err != nil {
-		return err
+	// Only the parent reads this pipe. Never log or echo the readiness token.
+	if err = json.NewEncoder(ready).Encode(map[string]string{
+		"origin": "http://" + listener.Addr().String(), "token": application.Token,
+	}); err != nil {
+		return fmt.Errorf("announce readiness: %w", err)
+	}
+	if parent != nil {
+		go func() { io.Copy(io.Discard, parent); cancel() }()
 	}
 	select {
 	case <-ctx.Done():

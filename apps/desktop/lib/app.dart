@@ -1,24 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'data/library_repository.dart';
+import 'app_session.dart';
 import 'features/library/library_screen.dart';
-import 'platform/backend_process.dart';
 import 'platform/close_boundary.dart';
 import 'ui/theme.dart';
-import 'features/design/design_controller.dart';
-import 'features/design/design_repository.dart';
 
 class PageforgeBootstrap extends StatefulWidget {
-  const PageforgeBootstrap({super.key});
+  const PageforgeBootstrap({this.openSession = AppSession.open, super.key});
+  final Future<AppSession> Function() openSession;
   @override
   State<PageforgeBootstrap> createState() => _PageforgeBootstrapState();
 }
 
 class _PageforgeBootstrapState extends State<PageforgeBootstrap> {
-  BackendProcess? backend;
-  HttpLibraryRepository? repository;
-  HttpDesignRepository? designRepository;
-  DesignController? designController;
+  AppSession? session;
+  Future<AppSession>? _pending;
+  bool _starting = false, _stopping = false;
   String error = '';
   @override
   void initState() {
@@ -27,64 +24,65 @@ class _PageforgeBootstrapState extends State<PageforgeBootstrap> {
   }
 
   Future<void> start() async {
-    setState(() {
-      error = '';
-    });
+    if (_starting || _stopping || session != null) return;
+    _starting = true;
+    setState(() => error = '');
     try {
-      final process = await BackendProcess.start();
-      if (!mounted) {
-        await process.close();
+      final opening = widget.openSession();
+      _pending = opening;
+      final ready = await opening;
+      if (!mounted || _stopping) {
+        await ready.close();
         return;
       }
-      final designs = HttpDesignRepository(process.origin, process.token);
-      final controller = DesignController(designs);
-      await controller.load();
-      if (!mounted) {
-        controller.dispose();
-        designs.close();
-        await process.close();
-        return;
-      }
-      setState(() {
-        designRepository = designs;
-        designController = controller;
-        backend = process;
-        repository = HttpLibraryRepository(process.origin, process.token);
-      });
+      setState(() => session = ready);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          error = e.toString();
-        });
-      }
+      if (mounted && !_stopping) setState(() => error = e.toString());
+    } finally {
+      _starting = false;
+      _pending = null;
     }
+  }
+
+  Future<void> stop() async {
+    _stopping = true;
+    if (session != null) {
+      await session!.close();
+      return;
+    }
+    final pending = _pending;
+    if (pending == null) return;
+    AppSession ready;
+    try {
+      ready = await pending;
+    } catch (_) {
+      // A failed open has already released its resources.
+      return;
+    }
+    await ready.close();
   }
 
   @override
   void dispose() {
-    designController?.dispose();
-    designRepository?.close();
-    repository?.close();
-    if (backend != null) unawaited(backend!.close());
+    // The window is gone; still close any session completing in the background.
+    unawaited(stop().catchError((Object _) {}));
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => CloseBoundary(
-    beforeClose: () async {
-      await backend?.close();
-    },
+    beforeClose: stop,
     builder: (context, navigator) => ListenableBuilder(
-      listenable: designController ?? const AlwaysStoppedAnimation<double>(0),
+      listenable: session?.design ?? const AlwaysStoppedAnimation<double>(0),
       builder: (context, _) => MaterialApp(
         navigatorKey: navigator,
         title: 'Pageforge',
         debugShowCheckedModeBanner: false,
-        theme: pageforgeTheme(designController?.document),
-        home: repository != null
+        theme: pageforgeTheme(session?.design.document),
+        home: session != null
             ? LibraryScreen(
-                repository: repository!,
-                designController: designController,
+                repository: session!.library,
+                designController: session!.design,
               )
             : Scaffold(
                 body: Center(
