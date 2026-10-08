@@ -230,7 +230,7 @@ func TestObjectAdmissionKeepsHeadAndRejectsUnreadableImports(t *testing.T) {
 	if err = session.VerifyText(record.ContentRoot, 1024*1024); err != nil {
 		t.Fatal(err)
 	}
-	if err = session.VerifyNotes(record.NotesRoot, 1024*1024); err != nil {
+	if err = session.VerifyBlob(record.NotesRoot, 1024*1024); err != nil {
 		t.Fatal(err)
 	}
 	s.config.Storage.ObjectCount = len(session.Hashes())

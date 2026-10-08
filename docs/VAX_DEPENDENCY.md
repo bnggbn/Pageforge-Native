@@ -19,6 +19,10 @@
 
 既有 Pageforge 事件及筆記結構使用固定 ASCII 欄位名，中文／emoji 是值；保留 TypeScript 產生的歷史 golden fixture 驗證相容。任意新動態欄位名、數字型別或 SDK 升級須另做 byte-level 相容驗收，不能宣稱所有舊的任意 JSON 行為都一致。SDK 缺功能或協定修正應回官方 repo，再更新 release 依賴，不在 Native fork 補 encoder。
 
+## 可選儲存附屬模組
+
+2026-10-08：另依賴 github.com/bnggbn/vax-action-history/storage v0.1.0，位於同一官方 repo 的獨立 module；tag storage/v0.1.0，不更新核心 go/v0.0.0，也不發布 C／npm。原 internal/content 實作及 golden fixture 已移到上游。Native 直接使用 storage，無本地副本、replace 或提交的 workspace override。儲存 root 與 SAI／還原全文 hash 仍分開；[來源、錯誤映射與驗收](STORAGE_SDK.md)。
+
 ## 語言界線
 
 後端自有程式的註解、診斷及 HTTP error 使用英文。fault code、HTTP status、errors.Is／errors.As 與 CAS 判斷不依訊息語言。

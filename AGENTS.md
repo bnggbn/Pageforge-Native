@@ -7,6 +7,7 @@ Windows first. Flutter/Dart owns UI; Go owns library, document rules, VAX and pe
 - Keep working-copy persistence, reading position, version commands and diff lifecycle separate.
 - Preserve existing library JSON and immutable original/version files. Schema changes require migration.
 - Use the official github.com/bnggbn/vax-action-history/go release pinned in backend/go.mod for canonical encoding, genesis and SAI. internal/vax is a Pageforge event adapter, not a protocol fork. Never copy or reimplement SDK primitives; preserve historical fixtures and bytes when updating the dependency.
+- Use the official github.com/bnggbn/vax-action-history/storage v0.1.0 companion for content-addressed text/blob storage. Do not restore a local internal/content implementation. Storage error kinds map to existing API codes in internal/fault; preserve errors.Is/errors.As causes and PFCO/PFCA bytes. No committed local replace or workspace override.
 - Backend comments, diagnostics and API error messages use English. Flutter localizes known fault codes. Preserve user data, Unicode test samples and legacy persisted labels; see docs/VAX_DEPENDENCY.md.
 - Use temporary/synthetic libraries in tests. Do not mutate real user books.
 - Never log the sidecar token. Listen on loopback and authenticate every API request.

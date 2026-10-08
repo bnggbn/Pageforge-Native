@@ -124,7 +124,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 		if err = session.VerifyText(record.ContentRoot, textLimit); err != nil {
 			return b, fault.Read(err)
 		}
-		if err = session.VerifyNotes(record.NotesRoot, notesLimit); err != nil {
+		if err = session.VerifyBlob(record.NotesRoot, notesLimit); err != nil {
 			return b, fault.Read(err)
 		}
 	}
@@ -167,7 +167,7 @@ func (s *Store) readObjectHistory(m model.Manifest, folder string, allowCache bo
 				return b, fault.New(fault.LimitExceeded, "reconstructed notes exceed the size limit")
 			}
 			retained += record.NotesRoot.Bytes * 2
-			payload, err := session.Notes(record.NotesRoot, notesLimit)
+			payload, err := session.Blob(record.NotesRoot, notesLimit)
 			if err != nil {
 				return b, fault.Read(err)
 			}

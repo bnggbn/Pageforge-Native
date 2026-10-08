@@ -8,16 +8,16 @@ import (
 	"io"
 	"os"
 
-	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
+	"github.com/bnggbn/vax-action-history/storage"
 )
 
 // One bounded, immutable verified history. File contents, not timestamps, define identity.
 type verifiedBook struct {
 	snapshotID    string
 	objectMetaKey string
-	objectFiles   []content.StoredFile
+	objectFiles   []storage.StoredFile
 	retainedBytes int64
 	key           string
 	book          model.Book

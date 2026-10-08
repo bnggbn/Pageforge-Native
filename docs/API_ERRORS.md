@@ -33,6 +33,7 @@ Content-Type 為 application/json; charset=utf-8。保留原本的 error 字串�
 
 ## Go 與儲存邊界
 
+- 官方 storage SDK 回傳自己的 Error.Kind；internal/fault.CodeOf 映射至既有 code，先保留外層應用分類，未知 Kind 退回 INTERNAL_ERROR。SDK cause 不被換掉，HTTP 儲存錯誤仍使用公開訊息隱藏私有路徑。[映射與驗收](STORAGE_SDK.md)。
 - internal/fault 無 HTTP 依賴；New／Wrap／Ensure、CodeOf 與 Unwrap 保留代碼及原因，errors.Is／errors.As 仍可辨認原始檔案錯誤或衝突 sentinel。Ensure 不蓋掉來源已有的分類。
 - Read 用於必要儲存依賴，缺檔為 STORAGE_MISSING，截斷／必要 JSON 解析失敗為 STORAGE_CORRUPT；Write 的發布／寫入失敗為 STORAGE_IO。
 - 物件層區分格式、完整性與配置限制；版本轉接層把完整 VAX 驗證失敗歸為 STORAGE_CORRUPT。普通檔案格式、CAS 與可讀性驗證次序保持原規則。

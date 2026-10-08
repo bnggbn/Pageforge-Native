@@ -6,6 +6,7 @@
 ## 第一階段
 
 - 建立 Flutter Windows 原生介面與 Go sidecar。
+- 內容儲存抽至 VAX 官方獨立 storage SDK v0.1.0；Native 移除 internal/content，直接依賴上游 text/blob API，保留格式／roots／容量與 HTTP error contract。[驗收](STORAGE_SDK.md)。
 - 啟動重構：AppSession 集中初始化及資源清理、單次重試、啟動中關窗等待、ready frame 有界驗證、Go 失敗清理與正常退出釋鎖；不覆寫正在使用的建置產物。[流程與驗收](STARTUP.md)。
 - 書店風格書架：襯線標題、向量封面、書脊光影、閱讀引導；拆分封面與書架區塊元件，見 [視覺規格](DESIGN.md)。
 - 書架分批入場、書卡浮起／焦點／按下回饋、閱讀轉場與模式切換；支援減少動畫。

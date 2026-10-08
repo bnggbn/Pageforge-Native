@@ -1,5 +1,7 @@
 # 內容物件與版本儲存架構
 
+2026-10-08：內容物件實作與 golden fixture 已移入官方 [storage SDK v0.1.0](https://github.com/bnggbn/vax-action-history/tree/storage/v0.1.0/storage)，本 repo 僅保留文件／筆記轉接。下列 PFCO／PFCA 格式與容量行為保持相容；[抽取與驗收](STORAGE_SDK.md)。
+
 第一階段已實作新匯入書的正文樹、獨立筆記 blob、物件共用及版本讀寫。已有分節編輯與目前快照讀取；操作式後端、按章 API／可視區閱讀排版、差異復原、正式 VAX root 事件、衝突新鏈、卡片發布與舊書遷移仍待完成。
 
 ## 資料流與階段
@@ -40,11 +42,11 @@ library/books/{documentId}/
   evidence-wall.json               現行 schema v2 布局，尚無布局 VAX
 ```
 
-- content/objects.go：雜湊路徑、一般檔案／連結檢查、有界讀取、不可覆寫發布。
-- content/tree.go：固定 writer policy 的 Gear 分塊、UTF-8 字元邊界、16 子項的有序樹建構；reader 不依賴切點演算法。
-- content/catalog.go：有界二進位集合讀寫、單檔批次載入、溢出回退及先物件後版本的發布。
-- content/session.go：物件 hash／型別／次序／長度驗證、共享依賴去重、正文還原及容量／深度限制。
-- content/fingerprint.go：暖讀串流重驗已完成 session 的物件依賴，仍檢查實際 bytes。
+- 上游 storage/objects.go：雜湊路徑、一般檔案／連結檢查、有界讀取、不可覆寫發布。
+- 上游 storage/tree.go：固定 writer policy 的 Gear 分塊、UTF-8 字元邊界、16 子項的有序樹建構；reader 不依賴切點演算法。
+- 上游 storage/catalog.go：有界二進位集合讀寫、單檔批次載入、溢出回退及先物件後版本的發布。
+- 上游 storage/session.go：物件 hash／型別／次序／長度驗證、共享依賴去重、正文還原及容量／深度限制。
+- 上游 storage/fingerprint.go：暖讀串流重驗已完成 session 的物件依賴，仍檢查實際 bytes。
 - library/revision_objects.go：實體紀錄與原有 Revision 的轉接；布局只取 head 筆記，不讀正文樹。
 - library/object_history.go：原檔／版本／物件 bytes 驗證、session 與快取邊界；完整歷史稽核另有 aggregate 還原預算。
 - library/object_snapshot.go：一般 Load／Commit 只留所選正文／筆記與歷史摘要；舊版按需還原，不淘汰已驗 head。

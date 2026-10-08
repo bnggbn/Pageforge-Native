@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"path/filepath"
 
-	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
+	"github.com/bnggbn/vax-action-history/storage"
 )
 
 const objectRevisionFormat = "objects-v1"
@@ -15,18 +15,18 @@ const objectRevisionFormat = "objects-v1"
 type objectRevision struct {
 	StorageVersion int            `json:"storageVersion"`
 	Revision       model.Revision `json:"revision"`
-	ContentRoot    content.Ref    `json:"contentRoot"`
-	NotesRoot      content.Ref    `json:"notesRoot"`
+	ContentRoot    storage.Ref    `json:"contentRoot"`
+	NotesRoot      storage.Ref    `json:"notesRoot"`
 }
 
-func (s *Store) objectStore(folder string) (*content.Store, error) {
-	maxBlob := max(int64(content.MaxChunk), int64(s.config.Limits.SnapshotNotesMiB)*1024*1024)
-	options := content.Options{
+func (s *Store) objectStore(folder string) (*storage.Store, error) {
+	maxBlob := max(int64(storage.MaxChunk), int64(s.config.Limits.SnapshotNotesMiB)*1024*1024)
+	options := storage.Options{
 		InlineBytes: s.config.Storage.InlineObjectBytes,
 		CatalogMiB:  s.config.Storage.ObjectCatalogMiB,
 		MaxObjects:  s.config.Storage.ObjectCount,
 	}
-	return content.OpenWithOptions(filepath.Join(folder, "objects"), maxBlob, options)
+	return storage.OpenWithOptions(filepath.Join(folder, "objects"), maxBlob, options)
 }
 
 // Only new imports select their storage format. Existing immutable revisions remain unchanged.
@@ -57,7 +57,7 @@ func (s *Store) writeRevision(folder, format string, revision model.Revision) er
 	if err != nil {
 		return fault.Encode(err)
 	}
-	notes, err := objects.PutNotes(data)
+	notes, err := objects.PutBlob(data)
 	if err != nil {
 		return fault.Read(err)
 	}
@@ -124,7 +124,7 @@ func (s *Store) revisionNotes(m model.Manifest, id string) ([]model.Note, error)
 		return nil, fault.Read(err)
 	}
 	session := objects.Session(int64(s.config.Storage.HistoryMiB)*1024*1024, s.config.Storage.ObjectCount)
-	payload, err := session.Notes(record.NotesRoot, int64(s.config.Limits.SnapshotNotesMiB)*1024*1024)
+	payload, err := session.Blob(record.NotesRoot, int64(s.config.Limits.SnapshotNotesMiB)*1024*1024)
 	if err != nil {
 		return nil, fault.Read(err)
 	}

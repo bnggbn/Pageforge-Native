@@ -7,6 +7,8 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+
+	"github.com/bnggbn/vax-action-history/storage"
 )
 
 type Code string
@@ -66,6 +68,29 @@ func CodeOf(err error) (Code, bool) {
 	var coded *Error
 	if errors.As(err, &coded) {
 		return coded.Code, true
+	}
+	var objectError *storage.Error
+	if errors.As(err, &objectError) {
+		switch objectError.Kind {
+		case storage.InvalidInput:
+			return InvalidRequest, true
+		case storage.InvalidOptions:
+			return Internal, true
+		case storage.LimitExceeded:
+			return LimitExceeded, true
+		case storage.Corrupt:
+			return StorageCorrupt, true
+		case storage.Missing:
+			return StorageMissing, true
+		case storage.IO:
+			return StorageIO, true
+		case storage.UnsupportedFormat:
+			return UnsupportedStorage, true
+		case storage.UnsafePath:
+			return UnsafePath, true
+		default:
+			return Internal, true
+		}
 	}
 	return "", false
 }

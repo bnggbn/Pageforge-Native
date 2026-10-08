@@ -2,15 +2,15 @@ package library
 
 import (
 	"encoding/json"
-	"github.com/bnggbn/Pageforge-Native/backend/internal/content"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/fault"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/model"
 	"github.com/bnggbn/Pageforge-Native/backend/internal/vax"
+	"github.com/bnggbn/vax-action-history/storage"
 )
 
 // Reader snapshots share the immutable wire format with full audit loads.
 // History remains metadata; only the requested snapshot is materialized.
-func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectRevision, session *content.Session,
+func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectRevision, session *storage.Session,
 	source []byte, consumed, budget int64, key, metaKey, snapshotID string, allowCache bool) (model.Book, error) {
 	verifier, err := vax.NewVerifier(b.Document, vax.Hash(source))
 	if err != nil {
@@ -89,8 +89,8 @@ func (s *Store) objectSnapshot(b model.Book, m model.Manifest, records []objectR
 	return b, nil
 }
 
-func decodeSnapshotNotes(session *content.Session, record objectRevision, limit int64) ([]model.Note, error) {
-	payload, err := session.Notes(record.NotesRoot, limit)
+func decodeSnapshotNotes(session *storage.Session, record objectRevision, limit int64) ([]model.Note, error) {
+	payload, err := session.Blob(record.NotesRoot, limit)
 	if err != nil {
 		return nil, fault.Read(err)
 	}
@@ -157,7 +157,7 @@ func (s *Store) LoadRevision(id, revision string) (model.Revision, error) {
 // All record/source/object bytes have already been rechecked against the cached
 // chain. Materialize a historical selection without evicting the head cache.
 func (s *Store) snapshotFromVerified(head model.Book, m model.Manifest, records []objectRevision,
-	objects *content.Store, budget int64, id string) (model.Book, error) {
+	objects *storage.Store, budget int64, id string) (model.Book, error) {
 	b := cloneBook(head)
 	session := objects.Session(budget, s.config.Storage.ObjectCount)
 	for _, record := range records {

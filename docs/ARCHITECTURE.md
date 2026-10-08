@@ -18,13 +18,14 @@ backend/
   internal/config/           共用設定與本機覆寫
   internal/model/            library 相容的資料模型
   internal/library/          檔案邊界、匯入、版本、草稿與進度
-  internal/content/          typed hash 物件、正文樹、有界集合與依賴驗證
   internal/fault/            穩定錯誤代碼、原因鏈；不依賴 HTTP
   internal/vax/              官方 VAX Go release 的 Pageforge 文件事件轉接層
   internal/settings/         不透明客戶端 JSON、byte revision 與原子保存
   internal/compare/          有輸入上限與 deadline 的文字 diff
   internal/api/              本機 API 與請求驗證
 ```
+
+正文樹／blob／catalog／依賴驗證直接使用官方獨立 storage module v0.1.0，實作及 golden fixture 位於上游 storage/，本 repo 不保留第二份。VAX 核心仍是 go module v0.0.0，不依賴 storage；Pageforge 版本轉接負責文件／筆記語義，fault.CodeOf 將 SDK Kind 映射為既有 API code。[責任與相容驗收](STORAGE_SDK.md)。
 
 儲存／版本來源以 typed fault 提供代碼與原始 cause，API 集中轉換 HTTP status／code／公開 error，Dart ApiException 保留 code。錯誤與成功資料的解析分開，401／403／routing 404／405 也使用 JSON；暖讀錯誤不以快取掩蓋。合約與相容界線見 [錯誤代碼](API_ERRORS.md)。
 
