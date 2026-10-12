@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/json"
 	"math"
+	"reflect"
 	"strings"
 	"unicode/utf8"
 
@@ -34,8 +35,15 @@ func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var b model.Book
-	var err error
-	if reader {
+	m, err := s.manifest(id)
+	if err != nil {
+		return b, err
+	}
+	verifiedManifest := m
+	var legacyBytes int64
+	if m.RevisionStorage == "" {
+		b, legacyBytes, err = s.readLegacyHistory(m)
+	} else if reader {
 		b, err = s.readSnapshot(id, "")
 	} else {
 		b, err = s.readBook(id)
@@ -104,16 +112,22 @@ func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error)
 	if err != nil {
 		return b, err
 	}
-	m, err := s.manifest(id)
+	m, err = s.manifest(id)
 	if err != nil {
 		return b, err
 	}
-	if m.RevisionIDs[len(m.RevisionIDs)-1] != input.ExpectedHead {
+	if m.RevisionIDs[len(m.RevisionIDs)-1] != input.ExpectedHead ||
+		(verifiedManifest.RevisionStorage == "" && !reflect.DeepEqual(m, verifiedManifest)) {
 		return b, ErrConflict
 	}
 	versionFolder, err := s.safe("books", id)
 	if err != nil {
 		return b, err
+	}
+	if m.RevisionStorage == "" {
+		if err = s.preflightLegacyRevision(r, legacyBytes); err != nil {
+			return b, err
+		}
 	}
 	if err = s.writeRevision(versionFolder, m.RevisionStorage, r); err != nil {
 		return b, err
@@ -139,19 +153,6 @@ func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error)
 		}
 		candidate = &validated
 	}
-	if m.RevisionStorage != objectRevisionFormat {
-		validated, validateErr := s.readLegacyBook(m)
-		if validateErr != nil {
-			return b, validateErr
-		}
-		if reader {
-			validated, validateErr = projectLegacySnapshot(validated, r.ID)
-			if validateErr != nil {
-				return b, validateErr
-			}
-		}
-		candidate = &validated
-	}
 	manifest, err := s.safe("books", id, "manifest.json")
 	if err != nil {
 		return b, err
@@ -164,6 +165,9 @@ func (s *Store) commit(id string, input Commit, reader bool) (model.Book, error)
 		b = *candidate
 	} else {
 		b.Revisions = append(b.Revisions, r)
+		if reader {
+			return projectLegacySnapshot(b, r.ID)
+		}
 	}
 	return b, nil
 }

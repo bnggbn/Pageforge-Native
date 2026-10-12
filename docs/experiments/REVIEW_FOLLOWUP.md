@@ -49,27 +49,7 @@ writer 使用高13bits 的固定遮罩 8191 << 51；只降低低位元遮罩對�
 在 backend/ 重跑：
 
 ```powershell
-go test ./internal/library -run '^
-
-1. UI 可視區閱讀排版與按章 API 優先；必須驗收 Markdown／TXT／EPUB 跨段落、畫面外全文選取、複製、重複段落筆記及閱讀進度。不能用互不相通的 SelectionArea 假裝完成。
-2. 筆記逐條物件與有序索引：現有整陣列 blob 仍 O(N²)，session／磁碟／冷 canonical 成本仍隨累加歷史成長；之後仍可能撞 physical 上限。
-3. 舊書顯式遷移與超量書出路；legacy 已有發布預檢，底層仍全文解碼。
-4. server.lock 殘留與單本壞 manifest 拖垮書架：仍未修正。正常容量失敗不切 head，不能把它當成這兩項修復。
-5. 持續輸入最大保存等待、可驗證差異復原與 crash 注入；目前仍停筆防抖保存完整草稿。
-6. catalog 整檔改寫、正式提交前後歷史驗證、局部樹更新／正式 root 型事件：先按實際收益排程，不搶在 UI 體驗之前。
-
-本輪 Go 全套測試、vet、Windows sidecar 編譯，Dart 格式、Flutter analyze 通過。Flutter 全套54項通過、1項 opt-in 長文探針在預設測試中跳過；另明確啟用全文 control／分節 editor 百萬字探針，各自通過。另覆蓋360px窄視窗導航、複製全文與精確保存、在途保存後再修改、保存失敗保留草稿及 Unicode／CRLF。沒有替換或重啟正在使用的程式；未做本輪完整 Flutter Windows release 建置、實際 IME／手機驗收。Windows symlink 權限限制仍待具權限環境補驗。
- -bench '^BenchmarkReaderSnapshotWorkloads
-
-1. UI 可視區閱讀排版與按章 API 優先；必須驗收 Markdown／TXT／EPUB 跨段落、畫面外全文選取、複製、重複段落筆記及閱讀進度。不能用互不相通的 SelectionArea 假裝完成。
-2. 筆記逐條物件與有序索引：現有整陣列 blob 仍 O(N²)，session／磁碟／冷 canonical 成本仍隨累加歷史成長；之後仍可能撞 physical 上限。
-3. 舊書顯式遷移與超量書出路；legacy 已有發布預檢，底層仍全文解碼。
-4. server.lock 殘留與單本壞 manifest 拖垮書架：仍未修正。正常容量失敗不切 head，不能把它當成這兩項修復。
-5. 持續輸入最大保存等待、可驗證差異復原與 crash 注入；目前仍停筆防抖保存完整草稿。
-6. catalog 整檔改寫、正式提交前後歷史驗證、局部樹更新／正式 root 型事件：先按實際收益排程，不搶在 UI 體驗之前。
-
-本輪完整驗收結果與 UI 對照將隨實際完成更新；不把歷史基準或外部 review 算成本次已重現。
- -benchtime=3x -benchmem
+go test ./internal/library -run '^$' -bench '^BenchmarkReaderSnapshotWorkloads$' -benchtime=3x -benchmem
 ```
 
 Go 全套測試、vet 與 Windows sidecar 編譯通過；新程式編譯到忽略的預覽目錄，沒有替換／重啟正在使用的 app。一次早期全套測試遇到 Windows catalog rename 的 Access is denied；原因未確定，隔離及後續全套重跑皆通過。失敗保持舊 head 的預檢已有回歸，但本輪未完成 Windows 各發布階段的 crash／共享檔案故障注入，不把重跑成功當作修復了所有 I/O 失敗。
@@ -114,3 +94,22 @@ TextDocumentView／閱讀器選取維持完整佈局，原有 Markdown／TXT／E
 ## 官方 SDK 與錯誤語言後續更正
 
 2026-10-07：VAX canonical／genesis／SAI 改為直接使用官方 Go SDK v0.0.0，移除先前本地相容實作；後端診斷及 HTTP error 使用英文，Flutter 依代碼提供中文顯示並保留 diagnostic。[依賴、相容範圍與本輪驗收](../VAX_DEPENDENCY.md)。本文既有數字保持原測量 runtime；沒有將官方 SDK 切換的回歸測試視為新的效能量測。
+
+## 2026-10-12 review 修正與驗收
+
+使用者提供的新 Linux 探針結果：93萬字不同位置修改已跑滿200版；900則累加筆記仍用238MiB，冷讀12.3秒、暖讀0.9秒，約900–1000則撞 physical 預算。這是使用者重跑結果，非本機原樣重現；本工作區尚未找到其三份探針檔案。筆記整包 blob 的 O(N²) 及暖讀重驗 bytes 仍未解決，逐條筆記物件與有序索引仍排在可視區閱讀器之後。
+
+legacy 保存改為在同一把 Store 寫鎖中取得完整驗證與 wire bytes 總量，新增版本由 vax.Create 產生；以舊歷史＋新 JSON 的實際位元組做 record／aggregate admission，不再重讀解碼整條候選歷史。容量不足在寫新版本前拒絕，manifest 不切 head。讀取仍完整驗證原始檔和歷史，未改為信任 mtime。發布前另核對 legacy manifest 仍與驗證時相同。Store 鎖只序列化合作的服務寫入，並非對原始書庫外部寫入提供跨檔案原子快照；外部修改在後續讀取仍重驗。
+
+objects-v1 候選預檢本輪保留：除了版本檔大小，還有 catalog、去重後可達物件、展開快照與投影預算，不能直接只加新 JSON 大小。後續需完整驗證收據及新增依賴的計量，不能省略這些容量語意。
+
+同一台 Windows amd64／Core Ultra 7 165H／Go1.26.2，本輪新 BenchmarkLegacyCommitWithoutVerifiedCache，100萬 mixed runes；關閉 verified cache，OS cache 不清。首次 edit 使用1版歷史；累加筆記使用31版歷史，再存第31則筆記。直接建立有效合成歷史在計時外，每項3次平均；不是使用者 Linux 探針，也不是超過64MiB的實際 cache 淘汰點重現。
+
+| 正常 Commit | 修前 | 修後 | 配置修前／修後 |
+| --- | --- | --- | --- |
+| 首次 edit | 201.8ms | 69.1ms | 42.7／22.5MiB |
+| 已有30則筆記後再新增1則 | 2394.1ms | 1109.9ms | 393.4／202.0MiB |
+
+修前／修後基準均使用官方核心 go/v0.0.0，數字只比較 legacy 預檢改動；後續 SDK 升版的相容驗收不回填成這組效能結果。Go 升版正式結果另記於 VAX_DEPENDENCY.md。
+
+修正文件中重跑指令被字串取代的 replacement token 展開污染；程式使用 callback／切片寫入，指令完整保留 '^$'，尚未完成清單只保留一份。原量測與未完成項目維持原有驗證範圍。

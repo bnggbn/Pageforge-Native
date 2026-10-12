@@ -21,7 +21,7 @@
 - 線索牆取代筆記頁籤：卡片標題與整片內容可拖曳、按住浮起且支援減少動畫、圖釘紅線、關係標籤、平移縮放、多個命名主題、筆記挑選、獨立布局保存與並行衝突檢查；舊 schema v1 首次保存為 v2 時保留原檔備份；[合約與限制](EVIDENCE_WALL.md)。
 - 持久化草稿、重開恢復與保存失敗阻止切換；Windows 正常關閉提供保存／捨棄目前草稿／取消，也涵蓋外觀工作室；失敗不關閉。
 - 驗證既有 library 主線；舊書原始檔、manifest、versions、drafts 與 progress.json 保持相容。新物件格式以 manifest marker 區分，舊程式尚不能讀取。
-- 一般 Go Load／Commit 的目前快照＋歷史摘要、objects-v1 串流正文雜湊與逐版筆記驗證／釋放、指定舊版按需還原／diff、只留 head 的驗證快取；LoadHistory／CommitHistory 與舊 HTTP 全歷史相容，legacy 仍完整解碼。新舊格式均有切 head 前容量預檢。另有精簡 reader HTTP 投影、舊草稿按需取基準版本、內容雜湊驗證快取、單檔／整本歷史讀取限制、批次匯入索引與完整 HTTP deadline；[版本儲存評估](VERSION_STORAGE.md)。
+- 一般 Go Load／Commit 的目前快照＋歷史摘要、objects-v1 串流正文雜湊與逐版筆記驗證／釋放、指定舊版按需還原／diff、只留 head 的驗證快取；LoadHistory／CommitHistory 與舊 HTTP 全歷史相容，legacy 仍完整解碼。新舊格式均有切 head 前容量預檢；legacy 重用剛驗證的 wire bytes 加新版本大小，不二次全歷史解碼，record／aggregate 限制與失敗保留舊 head 維持。另有精簡 reader HTTP 投影、舊草稿按需取基準版本、內容雜湊驗證快取、單檔／整本歷史讀取限制、批次匯入索引與完整 HTTP deadline；[版本儲存評估](VERSION_STORAGE.md)。
 - 線索牆圖釘移動只重繪紅線，卡片只更新活動位置；關係標籤重用排版並釋放，不繪製視窗外紅線。
 - VAX canonical／genesis／SAI 改為官方 Go SDK v0.0.0 直接依賴，移除本地協定實作；後端診斷英文、Flutter 依代碼顯示中文。[依賴與驗收](VAX_DEPENDENCY.md)。
 - 新匯入書預設 objects-v1：依內容分塊的正文樹、獨立筆記 blob、物件去重及有界驗證；正式 VAX 維持還原全文雜湊，舊書不遷移，配置／架構見 [內容物件](CONTENT_OBJECTS.md)。尚未提供操作式編輯、分章 API、差異復原或 root 型正式事件。

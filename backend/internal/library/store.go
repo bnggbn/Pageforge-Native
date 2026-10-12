@@ -119,6 +119,13 @@ func (s *Store) readBook(id string) (model.Book, error) {
 	return s.readLegacyBook(m)
 }
 func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
+	book, _, err := s.readLegacyHistory(m)
+	return book, err
+}
+
+// Return the size of the exact verified files, even when history exceeds cache capacity.
+// Commit can budget a new record without decoding the verified prefix again.
+func (s *Store) readLegacyHistory(m model.Manifest) (model.Book, int64, error) {
 	var b model.Book
 	var err error
 	id := m.Document.ID
@@ -126,11 +133,11 @@ func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
 	b.Revisions = []model.Revision{}
 	b.OriginalPath, err = s.safe("books", id, m.OriginalFile)
 	if err != nil {
-		return b, err
+		return b, 0, err
 	}
 	key, size, err := s.historyFingerprint(m, b.OriginalPath)
 	if err != nil {
-		return b, err
+		return b, 0, err
 	}
 	s.cacheMu.Lock()
 	cached := s.cache
@@ -138,27 +145,27 @@ func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
 		b = cloneBook(cached.book)
 		s.cacheMu.Unlock()
 		b.Progress = s.progress(m)
-		return b, nil
+		return b, size, nil
 	}
 	s.cacheMu.Unlock()
 	source, err := readBounded(b.OriginalPath, int64(s.config.Limits.DocumentMiB)*1024*1024)
 	if err != nil {
-		return b, err
+		return b, 0, err
 	}
 	loadedDigest, err := historyDigest(m)
 	if err != nil {
-		return b, err
+		return b, 0, err
 	}
 	appendFingerprint(loadedDigest, source)
 	consumed := int64(len(source))
 	versions, err := s.safe("books", id, "versions")
 	if err != nil {
-		return b, err
+		return b, 0, err
 	}
 	for _, revisionID := range m.RevisionIDs {
 		file, err := revisionPath(versions, revisionID)
 		if err != nil {
-			return b, err
+			return b, 0, err
 		}
 		var revision model.Revision
 		limit := int64(s.config.Storage.RecordMiB) * 1024 * 1024
@@ -168,24 +175,24 @@ func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
 		}
 		data, err := readBounded(file, limit)
 		if err != nil {
-			return b, err
+			return b, 0, err
 		}
 		consumed += int64(len(data))
 		appendFingerprint(loadedDigest, data)
 		if err = json.Unmarshal(data, &revision); err != nil {
-			return b, fault.Read(err)
+			return b, 0, fault.Read(err)
 		}
 		if revision.ID != revisionID {
-			return b, fault.New(fault.StorageCorrupt, "revision filename does not match its ID")
+			return b, 0, fault.New(fault.StorageCorrupt, "revision filename does not match its ID")
 		}
 		b.Revisions = append(b.Revisions, revision)
 	}
 	if err = vax.Verify(b.Document, source, b.Revisions); err != nil {
-		return b, fault.Ensure(fault.StorageCorrupt, "VAX history verification failed", err)
+		return b, 0, fault.Ensure(fault.StorageCorrupt, "VAX history verification failed", err)
 	}
 	// The cache key must identify the exact bytes passed to VAX, including external-write races.
 	if key != hex.EncodeToString(loadedDigest.Sum(nil)) {
-		return b, fault.New(fault.StorageCorrupt, "history changed externally during verification; reload")
+		return b, 0, fault.New(fault.StorageCorrupt, "history changed externally during verification; reload")
 	}
 	if size <= int64(s.config.Storage.VerifiedCacheMiB)*1024*1024 {
 		s.cacheMu.Lock()
@@ -193,7 +200,7 @@ func (s *Store) readLegacyBook(m model.Manifest) (model.Book, error) {
 		s.cacheMu.Unlock()
 	}
 	b.Progress = s.progress(m)
-	return b, nil
+	return b, size, nil
 }
 
 // Load returns the current snapshot and metadata for historical revisions.
