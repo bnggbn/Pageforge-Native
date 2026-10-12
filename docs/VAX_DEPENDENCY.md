@@ -4,8 +4,8 @@
 
 ## 來源與版本
 
-- module：github.com/bnggbn/vax-action-history/go v0.0.0。
-- 官方子 module tag：[go/v0.0.0](https://github.com/bnggbn/vax-action-history/tree/go/v0.0.0/go)，對應 commit 0645a869fd06f213d4cb09eeceaa05bf7da5e612；同 commit 的 [release v0.0.0](https://github.com/bnggbn/vax-action-history/releases/tag/v0.0.0)。
+- module：github.com/bnggbn/vax-action-history/go v0.0.1。
+- 官方子 module tag：[go/v0.0.1](https://github.com/bnggbn/vax-action-history/tree/go/v0.0.1/go)，對應 commit 2d23a9970e6f7e181667cd7b657ffd385e2e5c8a；上游修正分支 fix/jcs-utf16-order。Go Modules 直接使用此官方 tag，沒有另建 Native encoder。
 - backend/go.mod 鎖版本，go.sum 驗證 module；無本地 replace、vendored copy、Node sidecar 或浮動 main 依賴。
 
 先前 internal/vax/canonical.go 與 history.go 自行實作相容 vax-sdk 1.0.0 的 encoder／genesis／SAI，雖有 TypeScript golden fixture，但仍是第二份實作。本輪已移除，既有量測報告代表當時 runtime，不回填為官方 SDK 的效能數字。
@@ -36,3 +36,13 @@ Flutter ApiException 將已知代碼轉成中文 message，保留英文 diagnost
 保留 TypeScript 歷史 fixture、Unicode canonical 與非法數字測試；跑 Go 全套測試／vet、Windows 後端編譯，Flutter 錯誤本地化／diagnostic／未知碼／舊回應／CAS 回歸與全套測試／analyze。這不是新一輪正式效能量測，也沒有修改正在執行的私人書庫。
 
 本輪結果：Go 全套測試／vet 與 Windows 後端編譯通過；Flutter 全套 55 項測試通過、1 項 opt-in 探針跳過。修正測試字串插值 lint 後，錯誤合約 4 項測試與 analyze 再次通過。沒有重跑正式大檔效能探針，也沒有重建／替換正在執行的 Flutter release。
+
+## 2026-10-12 VAX-JCS Unicode key 排序修正
+
+VAX 的專用 JCS 位於官方 go/pkg/vax/jcs，Native 之前已使用它。上游 go/v0.0.0 的 sort.Strings 依 UTF-8 bytes 排序，與 TS Object.keys(...).sort() 的 UTF-16 code units 不同；文件也把排序寫成 byte-order。已在官方 repo 改為 UTF-16 比較，保留 VAX 的 ASCII-only／非 ASCII escape／十進位規則，不換成通用 RFC 8785 encoder。
+
+例：含「！」與「😀」的 key，canonical 應先出現 emoji。上游共享向量涵蓋高 BMP／補充平面邊界、相同 high surrogate、空 key／prefix 與巢狀陣列物件。原 Go 跨語言測試的 root 路徑錯誤並默默 skip；改成 module 內嵌向量一定執行，repo checkout 另核對共享檔案一致，發布後的 Go module 也能跑測試。
+
+此修正會改變受影響動態 Unicode key 的 SAE／SAI；舊鏈須保留原始 SAE bytes 與 encoder 版本，或明確建立新鏈遷移，不能重算覆寫舊 hash。Pageforge 既有事件欄位及筆記欄位皆固定 ASCII，中文／emoji 作為值，歷史 fixture 按 bytes 保持相容。storage 仍鎖 v0.1.0，不更動 PFCO／PFCA 或正式全文承諾。未修改使用者 library。
+
+上游本機驗證：Go1.23.12／1.26.2 全套測試與 vet 通過；pnpm 執行 TS 四套共116項測試及建置通過。這些是本機結果，未宣稱遠端 CI 已執行。Native 升版後：GOWORK=off、go mod tidy／verify、Go 全套測試／vet、從官方 tag 下載的核心 SDK 全套測試與 Windows 後端編譯均通過；ASCII-key TypeScript 歷史 fixture 與 Unicode key 轉接層回歸通過。正常預設 checksum 驗證成功，沒有提交或修改 replace／工作區覆寫／checksum 繞過設定。Dart 未修改，未重跑 Flutter 測試或重建／替換正在使用的 UI。

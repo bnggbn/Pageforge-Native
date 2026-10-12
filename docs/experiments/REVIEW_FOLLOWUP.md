@@ -113,3 +113,7 @@ objects-v1 候選預檢本輪保留：除了版本檔大小，還有 catalog、�
 修前／修後基準均使用官方核心 go/v0.0.0，數字只比較 legacy 預檢改動；後續 SDK 升版的相容驗收不回填成這組效能結果。Go 升版正式結果另記於 VAX_DEPENDENCY.md。
 
 修正文件中重跑指令被字串取代的 replacement token 展開污染；程式使用 callback／切片寫入，指令完整保留 '^$'，尚未完成清單只保留一份。原量測與未完成項目維持原有驗證範圍。
+
+JCS 問題已在官方核心 go/v0.0.1 修正並由 Native 鎖版使用；原 VAX 編碼規則保留，字節相容及上游測試詳見 [依賴文件](../VAX_DEPENDENCY.md)。歷史量測表仍代表各自指定 runtime，不回填成 SDK 升版的效能結果。
+
+本輪本機驗收：legacy 預檢修正後 Go 全套測試／vet 通過；官方核心升至 go/v0.0.1 後再次通過 Go 全套測試／vet、module checksum verify、下載版 SDK 全套測試與 Windows 後端編譯。測試涵蓋 record／aggregate 拒絕時不發布新 head、超量 record 不落版本檔、停用 cache 的冷讀一致性、舊歷史 fixture、還原與外部 bytes 修改偵測。Dart 未修改；未重跑 Flutter 測試、閱讀器長文探針或完整 Windows Flutter 建置。server.lock 殘留、壞 manifest 書架隔離及筆記 O(N²) 本輪未修。
