@@ -67,3 +67,5 @@ Windows 正常關閉會提示保存／捨棄目前草稿／取消，保存失敗
 Native 的一般 Go Load／Commit 回傳目前版本與歷史摘要；objects-v1 冷讀以串流正文雜湊及逐版筆記驗證歷史，不保留每版全文／筆記。舊草稿、diff 與還原按需取指定版本，歷史查看不淘汰 head 快取。LoadHistory／CommitHistory 與不帶 view=reader 的 HTTP 保留完整歷史相容介面及 aggregate 上限；legacy 仍需完整解碼。快取保留 head 與依賴／metadata，每次重驗實際位元組，暖讀仍有歷史 I/O 成本。新舊格式均在切 head 前預檢容量，舊書遷移仍待做；[review 修正與剩餘問題](docs/experiments/REVIEW_FOLLOWUP.md)。Go 另提供批次匯入索引。HTTP deadline 涵蓋完整回應。設定與 Git 式差異儲存評估見 [版本儲存評估](docs/VERSION_STORAGE.md)。冷讀取與完整歷史 I/O 仍待改善。大型文本的 opt-in 探針、限制與實測瓶頸見 [基準報告](docs/experiments/LARGE_DOCUMENT_BASELINE.md)；目前未通過百萬字體驗驗收。
 
 架構與分階段驗收見 [架構](docs/ARCHITECTURE.md)、[遷移規格](docs/MIGRATION.md)。
+
+局部驗證與可信 checkpoint 的 [架構提案](docs/PARTIAL_VERIFICATION.md) 已寫入規格，runtime 尚未實作；目前仍讀取並驗證完整可達 bytes。

@@ -114,6 +114,12 @@ objects-v1 候選預檢本輪保留：除了版本檔大小，還有 catalog、�
 
 修正文件中重跑指令被字串取代的 replacement token 展開污染；程式使用 callback／切片寫入，指令完整保留 '^$'，尚未完成清單只保留一份。原量測與未完成項目維持原有驗證範圍。
 
-JCS 問題已在官方核心 go/v0.0.1 修正並由 Native 鎖版使用；原 VAX 編碼規則保留，字節相容及上游測試詳見 [依賴文件](../VAX_DEPENDENCY.md)。歷史量測表仍代表各自指定 runtime，不回填成 SDK 升版的效能結果。
+前一輪曾將 JCS 對齊 TS 的 UTF-16 次序並發布 go/v0.0.1；此判斷已由下面的 UTF-8 更正取代。原 VAX 編碼規則保留，字節相容及上游測試詳見 [依賴文件](../VAX_DEPENDENCY.md)。歷史量測表仍代表各自指定 runtime，不回填成 SDK 升版的效能結果。
 
 本輪本機驗收：legacy 預檢修正後 Go 全套測試／vet 通過；官方核心升至 go/v0.0.1 後再次通過 Go 全套測試／vet、module checksum verify、下載版 SDK 全套測試與 Windows 後端編譯。測試涵蓋 record／aggregate 拒絕時不發布新 head、超量 record 不落版本檔、停用 cache 的冷讀一致性、舊歷史 fixture、還原與外部 bytes 修改偵測。Dart 未修改；未重跑 Flutter 測試、閱讀器長文探針或完整 Windows Flutter 建置。server.lock 殘留、壞 manifest 書架隔離及筆記 O(N²) 本輪未修。
+
+## 原規格排序與局部驗證後續
+
+2026-10-12：確認原 byte-order 規格以 Go 為參考，Go 恢復 UTF-8 byte-order、TS 改為明確比較 UTF-8 bytes；Native 改鎖官方 go/v0.0.2。保留 go/v0.0.1 發布紀錄與不可變 tag，不改使用者資料及歷史效能數字；[依賴與相容界線](../VAX_DEPENDENCY.md)。
+
+局部驗證可保留「所讀內容屬於可信完整版本」的承諾，不能同時宣稱未讀實體檔此刻全都無損。提案採可信 checkpoint、歷史 inclusion／consistency proof、受認證的 event→root 對照、實際葉 bytes 與有界背景完整稽核。現有 SAE 僅承諾全文／整包筆記 hash，PFCO root 並非全文 SHA-256，因此不得直接以 root 取代現有事件驗證；[提案、架構與 SDK 界線](../PARTIAL_VERIFICATION.md)。本輪沒有局部驗證 runtime、新事件 schema 或新筆記樹；原容量與完整讀取防護保持。

@@ -8,7 +8,7 @@ func TestOfficialCanonicalUnicodeKeyOrder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const expected = `{"\ud83d\ude00":2,"\uff01":1}`
+	const expected = `{"\uff01":1,"\ud83d\ude00":2}`
 	if canonical != expected {
 		t.Fatalf("got %q; want %q", canonical, expected)
 	}
